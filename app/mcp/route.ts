@@ -4,7 +4,7 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { createChessServer } from '@/lib/mcp';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-const cors = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST, GET, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type, Accept, MCP-Protocol-Version, Mcp-Session-Id','Access-Control-Expose-Headers':'MCP-Protocol-Version, Mcp-Session-Id'};
+const cors = {'Cache-Control':'no-store','Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST, GET, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type, Accept, MCP-Protocol-Version, Mcp-Session-Id','Access-Control-Expose-Headers':'MCP-Protocol-Version, Mcp-Session-Id'};
 export async function POST(request: Request) {
   if (Number(request.headers.get('content-length') ?? 0) > 16384) return new Response('Request too large',{status:413,headers:cors});
   const text = await request.text();

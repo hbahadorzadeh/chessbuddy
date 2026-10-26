@@ -5,11 +5,11 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import { playMove, positionInput, moveInput } from './chess';
 
-export const BOARD_URI = 'ui://chessbuddy/practice-board.html';
+export const BOARD_URI = 'ui://chessbuddy/practice-board-v2.html';
 export function createChessServer(html: string, store:BoardStore=memoryBoardStore) {
   const boards=liveBoards(store);
   const boardKey=z.string().regex(/^[a-f0-9]{64}$/);
-  const server = new McpServer({name:'chessbuddy', version:'0.1.0'});
+  const server = new McpServer({name:'chessbuddy', version:'0.2.0'});
   registerAppResource(server, 'practice-board', BOARD_URI, {}, async () => ({contents:[{
     uri:BOARD_URI, mimeType:RESOURCE_MIME_TYPE, text:html,
     _meta:{ui:{prefersBorder:true,csp:{connectDomains:[],resourceDomains:[]}},"openai/ui":{availableDisplayModes:["inline","fullscreen"],preferredDisplayMode:"fullscreen"}},
@@ -26,7 +26,7 @@ export function createChessServer(html: string, store:BoardStore=memoryBoardStor
   });
   server.registerTool('play_practice_move',{
     title:'Play a practice move',
-    description:'Play on an existing live board by supplying boardKey and expectedRevision from the latest context; use read_practice_board to refresh stale state. This updates the existing board without drawing a new one. Never call open_practice_board for an ordinary reply. Without boardKey, calculate a legal next chess position using the complete current SAN move history and a SAN or UCI move. Live-board state is best-effort process memory; stateless calculations do not mutate it. Use the latest widget context; ask the player if the intended move is ambiguous. This does not select an opponent move or provide engine analysis.',
+    description:'Play on an existing live board by supplying boardKey and expectedRevision from the latest context; use read_practice_board to refresh stale state. This updates the existing board without drawing a new one. Never call open_practice_board for an ordinary reply. Without boardKey, calculate a legal next chess position using the complete current SAN move history and a SAN or UCI move. Live-board state is best-effort process memory; stateless calculations do not mutate it. Use the latest widget context; ask the player if the intended move is ambiguous. When playing as the opponent, call this tool to commit your chosen move before telling the player you played it. A text announcement alone does not move a piece. This tool does not choose a move or provide engine analysis.',
     inputSchema:{...moveInput.shape,boardKey:boardKey.optional(),expectedRevision:z.number().int().min(0).optional()}, annotations:{...annotations,readOnlyHint:false},
   }, async (args: {moves:string[];move:string;boardKey?:string;expectedRevision?:number}) => {
     try { const state=args.boardKey?await (async()=>{if(!boards)throw new Error('Live boards unavailable');if(args.expectedRevision===undefined)throw new Error('Expected revision required');return boards.play(args.boardKey!,args.expectedRevision,args.move);})():playMove(args); return {content:[{type:'text',text:`Played ${state.moves.at(-1)}. ${state.turn} to move (${state.status}).`}],structuredContent:state}; }

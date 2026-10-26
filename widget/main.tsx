@@ -160,7 +160,7 @@ function Board() {
     }catch(e){setError(e instanceof Error?e.message:'Move failed. Try again.');}
     finally{setBusy(false);}
   }
-  return <main><header><span className="logo">♞</span><div><p className="eyebrow">CHESSBUDDY</p><h1>Think one move ahead.</h1></div><span className="badge">Practice preview</span></header>
+  return <main><header><span className="logo">♞</span><div><p className="eyebrow">CHESSBUDDY</p><h1>Think one move ahead.</h1></div><span className="badge">Live board · v0.2</span></header>
     <p className="intro">Select a piece, then its destination. Ask ChatGPT about the ideas behind the position.</p>
     <div role="status" aria-live="polite" className="status">{!state?'Waiting for your position…':waiting?'ChatGPT is choosing a move…':busy?'Checking your move…':`${state.turn} to move · ${state.status}`}</div>
     {state && <div className="board" aria-label="Chessboard, White at bottom" aria-busy={busy}>{state.board.flatMap((rank,r)=>rank.map((piece,c)=>{

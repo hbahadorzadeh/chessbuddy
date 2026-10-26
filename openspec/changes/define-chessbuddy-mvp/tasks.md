@@ -46,3 +46,8 @@
 - [x] 7.4 Test invalid and concurrent replies, expiry, eviction, cold-instance recovery, and MCP tool metadata.
 - [x] 7.5 Verify CI, deployment, and live endpoint after publication.
 - [ ] 7.6 Verify automatic handoff and board continuity in the user's browser ChatGPT session.
+
+## 8. Cached board upgrade
+- [x] 8.1 Version the board resource address and display v0.2 so old views are identifiable.
+- [x] 8.2 Disable HTTP MCP response caching and clarify that opponent moves must be committed through the move tool.
+- [ ] 8.3 Verify deployment and ask the user to reconnect and test a fresh v0.2 board.

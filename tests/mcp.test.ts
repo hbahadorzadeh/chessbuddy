@@ -12,6 +12,7 @@ test('MCP handshake, tool discovery, embedded resource, and legal/illegal moves'
  try {
   const tools=await client.listTools();
   assert.equal(tools.tools.length,4);
+  assert.match(BOARD_URI,/practice-board-v2\.html$/);
   assert.equal((tools.tools[0]._meta?.ui as {resourceUri:string}).resourceUri,BOARD_URI);
   assert.equal(tools.tools.find(t=>t.name==='play_practice_move')?._meta?.ui,undefined);
   const resource=await client.readResource({uri:BOARD_URI});
