@@ -44,3 +44,22 @@ The system SHALL review a finished game with up to three meaningful moments and 
 #### Scenario: Insufficient moments
 - **WHEN** a very short game contains fewer than three useful moments
 - **THEN** the review returns fewer moments without fabricating mistakes
+
+### Requirement: Position-aware authored chess knowledge
+The app SHALL provide a bundled knowledge resource and read-only revision-scoped guidance tool. Standard opening continuations SHALL apply only to matching legal positions, and illustrative lesson examples SHALL remain separate from current-position recommendations. Provenance and lack of engine/database verification SHALL be explicit.
+
+#### Scenario: Opening match
+- **WHEN** the current position matches a curated opening position
+- **THEN** guidance returns legal candidates and teaching ideas without claiming a certified best move
+
+#### Scenario: Off-book or stale position
+- **WHEN** no opening matches or the requested revision is stale
+- **THEN** the app returns general principles for the former and a revision conflict for the latter without mutating the game
+
+#### Scenario: Progressive hint
+- **WHEN** a question-level hint is requested
+- **THEN** no candidate SAN moves, mate solution, or worked example variation is revealed
+
+#### Scenario: Candidate permits immediate mate
+- **WHEN** a legal proposed move allows a legal mating reply on the next ply
+- **THEN** guidance identifies the verified mating replies and states that this is a limited tactical check rather than full engine analysis

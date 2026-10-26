@@ -6,3 +6,5 @@ node_modules/
 coverage/
 *.tsbuildinfo
 public/chess-widget.html
+
+public/replay-widget.html

@@ -38,10 +38,24 @@ Record the last healthy production deployment. Roll back by promoting it in Verc
 
 
 ## Live games with app memory
-No database or new credentials are required. A module-level cache holds at most 1,000 games per warm process, expiring one hour after the last move. Each game uses a UUID created once by `new_game`. All other tools require that same UUID. Reopening is read-only; recovery restores the same UUID. UUIDs are anonymous identifiers, not account authentication; do not post active game IDs publicly.
+No database or new credentials are required. A module-level cache holds at most 1,000 games per warm process, expiring seven days after the last committed move. Each game uses a UUID created once by `new_game`. All other tools require that same UUID. Reopening is read-only; recovery restores the same UUID. UUIDs are anonymous identifiers, not account authentication; do not post active game IDs publicly.
 
 Vercel may route requests to separate instances or discard process memory. This is explicitly best-effort and does not implement durable saved games. Revision checks are atomic only within one process. Browser storage and supported host widget state retain the visible history per UUID; those can be unavailable in sandboxed views. Recovery refuses to overwrite newer/conflicting server history and cannot recover an unseen reply from another instance.
 
-After deployment refresh app tools and open a **new_game** once. Verify **Live board · v0.3** and copy its UUID. Play e4 and have ChatGPT commit c5; verify the UUID stays unchanged, history is e4/c5, and revision is 2. Reopen using open_practice_board with that UUID; it must resume, not reset. A second explicitly new game must receive a different UUID. When testing memory loss, use recover_practice_board with the existing UUID, complete moves, and matching expectedRevision, then reopen the same UUID.
+After deployment refresh app tools and open a **new_game** once. Verify **Live board · v0.4** and copy its UUID. Play e4 and have ChatGPT commit c5; verify the UUID stays unchanged, history is e4/c5, and revision is 2. Reopen using open_practice_board with that UUID; it must resume, not reset. A second explicitly new game must receive a different UUID. When testing memory loss, use recover_practice_board with the existing UUID, complete moves, and matching expectedRevision, then reopen the same UUID.
 
 An HTTP smoke test verifies a running server and session identity; ChatGPT panel lifetime and browser turn handoff must still be tested inside the host. The application cannot prevent the host from closing its view, but reopening by UUID must not create a new game.
+
+## Clocks, retention, and knowledge checks
+Game payloads include timing metadata, per-player move/time totals, a move ledger, and expiresAt. UI clocks tick locally from server timestamps; the active side runs continuously, including disconnected time, and clocks freeze at game over. Same-UUID recovery accepts validated timing metadata. Without historical timestamps the restored game is explicitly approximate. Anonymous timings are not competition-grade or tamper-proof.
+
+Cache and browser snapshots target seven-day expiry from the last committed move. Reads/guidance do not extend it; warm-instance loss or capacity eviction can remove games earlier. No retention guarantee or new external store is implied.
+
+The knowledge catalogue and retrieval code are bundled. Guidance is read-only and revision-scoped; its tool does not render another board. Verify legal exact-position candidates after e4, a nonspoiling hint, and no revision change after advice. Its source is authored notes on standard theory, not imported game statistics or engine analysis. The UI resource is v4; reconnect/refresh tools to load it while retaining the game UUID.
+
+## Replay verification
+The widget build now produces a separate replay HTML resource traced into `/mcp` and `/replay`. No additional dependency, account, or service is required. `create_replay` accepts one of gameId, PGN, or moves plus optional initialFen/startPly/durationsMs; only this tool opens a replay view. read_replay, seek_replay, and get_replay_guidance are headless. Replay UUIDs are independent of live game UUIDs and the live game's state is never advanced by replay controls.
+
+Verify a current-game snapshot, PGN import, and a FEN continuation starting with Black on move 42. Check that a later starting ply renders the correct frame, previous/next and slider work, autoplay obeys speed/timing mode, pause/review shares the selected position, and a model seek pauses the viewer. Check promotion, castling, and en passant. Confirm the active game UUID/revision remains unchanged.
+
+Elapsed timings are read from explicit arrays, app ledger, or PGN %emt; %clk balances alone are not elapsed times. Supplied historical metadata remains unverified. The browser import harness is `/replay`; it uses `/api/replay` independently of the MCP route's cache. Both are best-effort instance-local memory. A lost server record requires re-import for remote synchronization, while the loaded sequence remains navigable locally.

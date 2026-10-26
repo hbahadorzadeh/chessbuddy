@@ -1,0 +1,22 @@
+{
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "ChessBuddy",
+        "shortDescription": "Learn chess by playing",
+        "category": "Education & Research",
+        "longDescription": "Practice chess with ChatGPT using an interactive board, legal move validation, and a stable game ID. Track elapsed game and player time, move counts, and move-by-move timing. Ask for progressive hints and position-aware explanations from a bundled collection of authored chess lessons and standard opening continuations. Replay supplied PGN, an existing game snapshot, or a continuation from a custom FEN; step, jump, or autoplay with optional recorded move timing and discuss the selected position with ChatGPT.\n\nThis release uses anonymous, best-effort app memory on Vercel. Games may become unavailable before their seven-day expiry if instances restart or records are evicted. It has no engine evaluation or professional-strength guarantee. Imported historical metadata is supplied by the user and not independently verified.",
+        "defaultPrompt": [
+          "Start a chess game and help me understand the ideas behind each move.",
+          "Give me a gentle hint about my current position without revealing a move.",
+          "Replay my supplied PGN from a later position and explain the strategy."
+        ],
+        "developerName": "Hamed Bahadorzadeh"
+      },
+      "publication": {
+        "release_notes": "Initial submission draft: interactive legal chess games with stable UUIDs, elapsed timers, move tracking, authored guidance, and PGN/FEN replay with optional recorded timing.",
+        "countries": []
+      }
+    }
+  }
+}

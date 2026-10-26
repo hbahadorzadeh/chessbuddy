@@ -1,9 +1,10 @@
+import {GAME_RETENTION_MS} from './game-stats';
 import type {BoardStore,StoredBoard} from './live-board';
 
 /** Best-effort instance-local cache. Vercel instances never share this map. */
-export function createMemoryBoardStore({maxBoards=1000,ttlMs=60*60*1000,now=Date.now}={}) : BoardStore {
+export function createMemoryBoardStore({maxBoards=1000,ttlMs=GAME_RETENTION_MS,now=Date.now}={}) : BoardStore {
   const entries=new Map<string,{value:StoredBoard;expires:number}>();
-  const copy=(value:StoredBoard):StoredBoard=>({moves:[...value.moves],revision:value.revision});
+  const copy=(value:StoredBoard):StoredBoard=>structuredClone(value);
   function find(key:string){
     const entry=entries.get(key);
     if(entry && entry.expires<=now()){entries.delete(key);return;}
@@ -11,7 +12,7 @@ export function createMemoryBoardStore({maxBoards=1000,ttlMs=60*60*1000,now=Date
   }
   function write(key:string,value:StoredBoard){
     entries.delete(key);
-    entries.set(key,{value:copy(value),expires:now()+ttlMs});
+    entries.set(key,{value:copy(value),expires:Math.min(now()+ttlMs,value.timing?value.timing.updatedAt+GAME_RETENTION_MS:Infinity)});
   }
   return {
     async create(key,value){

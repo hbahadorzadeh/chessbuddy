@@ -14,6 +14,7 @@ Players who know the rules need help recognizing threats, choosing plans, and le
 - `chess-game`: Authoritative legal games and configurable engine opponent.
 - `chess-coaching`: Progressive hints, grounded explanations, and post-game review.
 - `game-persistence`: Owned games, concurrency, and reliable recovery.
+- `game-replay`: Separate replay from PGN, game history, or arbitrary initial FEN, with timed playback and position-aware review.
 - `delivery`: Next.js architecture, verification, and Vercel deployment.
 
 ### Modified Capabilities

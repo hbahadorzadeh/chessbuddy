@@ -33,3 +33,14 @@ The system SHALL use transactional revision checks and request identifiers for m
 #### Scenario: Interrupted opponent turn
 - **WHEN** the human move committed but the process stopped before the engine reply
 - **THEN** a later retry resumes the pending turn and at most one engine reply commits
+
+### Requirement: Seven-day prototype retention target
+Anonymous game records and browser snapshots SHALL expire seven days after the last committed move. Reads SHALL NOT extend expiry. This setting SHALL be documented as best-effort under the user's Vercel app-memory choice; process loss or bounded-cache eviction can remove records sooner.
+
+#### Scenario: Retention boundary
+- **WHEN** seven days pass since the last committed move
+- **THEN** the cache no longer serves that record and an expired browser snapshot is not restored
+
+#### Scenario: Activity and reads
+- **WHEN** a move commits and subsequent position/guidance reads occur
+- **THEN** the move establishes the new expiry and reads preserve that deadline

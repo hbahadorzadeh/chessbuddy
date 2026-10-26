@@ -59,3 +59,20 @@
 - [x] 9.4 Preserve per-game browser/host snapshots and reject other-game or stale incoming state; poll while idle too.
 - [x] 9.5 Add tests for UUID lifecycle, concurrent replies, cold recovery, and view restoration.
 - [ ] 9.6 Verify deployed session lifecycle and browser behavior in ChatGPT.
+
+## 10. Knowledge, timers, move tracker, and one-week retention
+- [x] 10.1 Bundle 20 legal standard opening lines and 10 authored teaching lessons with explicit provenance/limits.
+- [x] 10.2 Add exact-position guidance, limited mate checks, progressive hints, and a read-only MCP knowledge tool/resource.
+- [x] 10.3 Add elapsed game/player timers, move counters, per-move durations, and a visible move tracker without changing UUIDs.
+- [x] 10.4 Preserve valid timing metadata during recovery and mark missing history unknown.
+- [x] 10.5 Set seven-day cache/browser expiry from the last committed move and document Vercel memory limits.
+- [x] 10.6 Test knowledge legality, transpositions, no-spoiler hints, timer alternation/finish/recovery, and retention boundaries.
+- [ ] 10.7 Verify deployed tools, timing payloads, and v0.4 UI; confirm in-host teaching and clocks with the user.
+
+## 11. Replay and strategy review
+- [x] 11.1 Validate PGN/move-list/current-game imports into a separate replay UUID with initial FEN and relative start ply.
+- [x] 11.2 Preserve player, move number, special moves, optional elapsed timings, and provenance limitations in replay frames.
+- [x] 11.3 Add seek/read/review MCP tools and a separate viewer with navigation, slider, autoplay/pause, speed, and recorded-time playback.
+- [x] 11.4 Share the displayed replay position with ChatGPT and allow model seeking without changing an active game.
+- [x] 11.5 Test partial starts, PGN setup/timing, invalid inputs, special moves, cursor conflicts, retention, and live-game isolation.
+- [ ] 11.6 Verify production build, deployed tools/resources, and in-host replay controls with the user.

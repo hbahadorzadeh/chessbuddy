@@ -1,3 +1,4 @@
+import {gameStats,type GameTiming} from './game-stats';
 import { Chess } from 'chess.js';
 import { z } from 'zod';
 
@@ -13,6 +14,8 @@ export function describePosition(moves: string[]) {
   return {
     mode: 'ephemeral-practice' as const,
     gameId: undefined as string | undefined,
+    timing: undefined as GameTiming | undefined,
+    stats: gameStats(chess.history(),undefined,chess.isGameOver()),
     moves: chess.history(),
     revision: chess.history().length,
     fen: chess.fen(),

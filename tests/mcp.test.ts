@@ -11,8 +11,8 @@ test('MCP handshake, tool discovery, embedded resource, and legal/illegal moves'
  await server.connect(a);await client.connect(b);
  try {
   const tools=await client.listTools();
-  assert.equal(tools.tools.length,5);
-  assert.match(BOARD_URI,/practice-board-v3\.html$/);
+  assert.equal(tools.tools.length,10);
+  assert.match(BOARD_URI,/practice-board-v4\.html$/);
   assert.equal((tools.tools[0]._meta?.ui as {resourceUri:string}).resourceUri,BOARD_URI);
   assert.equal(tools.tools.find(t=>t.name==='play_practice_move')?._meta?.ui,undefined);
   const resource=await client.readResource({uri:BOARD_URI});
@@ -23,6 +23,17 @@ test('MCP handshake, tool discovery, embedded resource, and legal/illegal moves'
   const moved=await client.callTool({name:'play_practice_move',arguments:{gameId,expectedRevision:0,move:'e4'}});
   assert.equal((moved.structuredContent as Record<string,unknown>)?.turn,'Black');
   assert.deepEqual((moved.structuredContent as Record<string,unknown>)?.moves,['e4']);
+  const advice=await client.callTool({name:'get_chess_guidance',arguments:{gameId,expectedRevision:1}});
+  assert.equal((advice.structuredContent as Record<string,unknown>).gameId,gameId);
+  assert.ok((advice.structuredContent as {openingCandidates:{san:string}[]}).openingCandidates.some(m=>m.san==='e5'));
+  const stale=await client.callTool({name:'get_chess_guidance',arguments:{gameId,expectedRevision:0}});assert.equal(stale.isError,true);
+  const replay=await client.callTool({name:'create_replay',arguments:{gameId,startPly:1}});
+  const replayId=(replay.structuredContent as {replayId:string}).replayId;
+  assert.equal((replay.structuredContent as {originGameId:string}).originGameId,gameId);
+  await client.callTool({name:'seek_replay',arguments:{replayId,ply:0,expectedRevision:0}});
+  const replayAdvice=await client.callTool({name:'get_replay_guidance',arguments:{replayId,ply:1}});assert.equal((replayAdvice.structuredContent as {ply:number}).ply,1);
+  const active=await client.callTool({name:'read_practice_board',arguments:{gameId}});assert.deepEqual((active.structuredContent as {moves:string[]}).moves,['e4']);
+  const catalogue=await client.readResource({uri:'chessbuddy://knowledge/guide'});assert.equal(JSON.parse((catalogue.contents[0] as {text:string}).text).openingLines.length,20);
   const illegal=await client.callTool({name:'play_practice_move',arguments:{gameId,expectedRevision:1,move:'e4'}});
   assert.equal(illegal.isError,true);
  }finally{await client.close();await server.close();}
@@ -50,6 +61,6 @@ test('live board MCP tools share state and replies never have UI rendering metad
   const missingId=await client.callTool({name:'play_practice_move',arguments:{move:'e5',expectedRevision:1}});
   assert.equal(missingId.isError,true);
   const tools=await client.listTools();
-  for(const t of tools.tools.filter(t=>!['new_game','open_practice_board'].includes(t.name)))assert.equal(t._meta?.ui,undefined);
+  for(const t of tools.tools.filter(t=>!['new_game','open_practice_board','create_replay'].includes(t.name)))assert.equal(t._meta?.ui,undefined);
  }finally{await client.close();await server.close();}
 });
