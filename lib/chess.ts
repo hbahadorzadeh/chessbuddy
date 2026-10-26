@@ -12,7 +12,7 @@ export function describePosition(moves: string[]) {
   for (const move of moves) chess.move(move, {strict: true});
   return {
     mode: 'ephemeral-practice' as const,
-    boardKey: undefined as string | undefined,
+    gameId: undefined as string | undefined,
     moves: chess.history(),
     revision: chess.history().length,
     fen: chess.fen(),

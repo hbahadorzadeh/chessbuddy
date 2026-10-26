@@ -66,4 +66,27 @@ The prototype SHALL send ChatGPT a turn request after an accepted human move whe
 
 #### Scenario: Recovery
 - **WHEN** the player chooses Recover from history
-- **THEN** the widget obtains a fresh board key for the exact displayed history without creating another board view and explains that an unseen reply may be lost
+- **THEN** the widget recovers the SAME game UUID from the exact displayed history without overwriting newer or conflicting state without creating another board view and explains that an unseen reply may be lost
+
+### Requirement: Stable game UUID
+Each explicitly new game SHALL receive a fresh UUID. Both players, reads, reopening, browser state restoration, and recovery SHALL use that same gameId throughout the game. Reopening SHALL be read-only, and model-facing moves SHALL require gameId and expectedRevision.
+
+#### Scenario: New and resumed games
+- **WHEN** a game is started, played by both sides, and reopened using its UUID
+- **THEN** its UUID and latest move history remain unchanged, while an explicitly second new game receives a different UUID
+
+#### Scenario: Missing identity
+- **WHEN** a model attempts a move without gameId or expectedRevision
+- **THEN** input validation rejects it instead of calculating an uncommitted position
+
+#### Scenario: Recovery after memory loss
+- **WHEN** complete known history is recovered after server memory loss
+- **THEN** the same game UUID is restored without rolling back a newer compatible history or replacing a conflicting one
+
+#### Scenario: View remount receives an old initial result
+- **WHEN** the host remounts a view with an earlier snapshot for the same UUID and newer compatible browser history is available
+- **THEN** the board restores the newer history rather than resetting to the initial position
+
+#### Scenario: Different game result
+- **WHEN** an update for another UUID reaches an already initialized board
+- **THEN** the displayed game is preserved

@@ -50,4 +50,12 @@
 ## 8. Cached board upgrade
 - [x] 8.1 Version the board resource address and display v0.2 so old views are identifiable.
 - [x] 8.2 Disable HTTP MCP response caching and clarify that opponent moves must be committed through the move tool.
-- [ ] 8.3 Verify deployment and ask the user to reconnect and test a fresh v0.2 board.
+- [x] 8.3 Verify deployment and ask the user to reconnect and test a fresh v0.2 board.
+
+## 9. Stable game sessions
+- [x] 9.1 Generate a UUID only for a new game and require the unchanged gameId on play/read/resume/recovery.
+- [x] 9.2 Remove the model-facing stateless move fallback and make reopening read-only.
+- [x] 9.3 Restore the same UUID after memory loss while rejecting rollback and conflicting history.
+- [x] 9.4 Preserve per-game browser/host snapshots and reject other-game or stale incoming state; poll while idle too.
+- [x] 9.5 Add tests for UUID lifecycle, concurrent replies, cold recovery, and view restoration.
+- [ ] 9.6 Verify deployed session lifecycle and browser behavior in ChatGPT.

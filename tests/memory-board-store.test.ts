@@ -15,9 +15,9 @@ test('cache isolates returned histories and only advances the expected revision'
  const attempts=await Promise.all([cache.compareAndSwap('a',0,{moves:['e4'],revision:1}),cache.compareAndSwap('a',0,{moves:['d4'],revision:1})]);
  assert.equal(attempts.filter(Boolean).length,1);
 });
-test('a cold instance rejects missing boards and can recover history under a new key',async()=>{
+test('a cold instance rejects missing boards and recovers history under the SAME UUID',async()=>{
  const original=liveBoards(createMemoryBoardStore());const cold=liveBoards(createMemoryBoardStore());
  const board=await original.open(['e4','e5']);
- await assert.rejects(cold.read(board.boardKey!),/unavailable/);
- const recovered=await cold.open(board.moves);assert.notEqual(recovered.boardKey,board.boardKey);assert.equal(recovered.fen,board.fen);
+ await assert.rejects(cold.read(board.gameId!),/GAME_UNAVAILABLE/);
+ const recovered=await cold.recover(board.gameId!,board.moves,board.revision);assert.equal(recovered.gameId,board.gameId);assert.equal(recovered.fen,board.fen);
 });

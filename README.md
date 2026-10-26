@@ -1,7 +1,7 @@
 # ChessBuddy
 Learn chess inside ChatGPT, with a playable board and a conversation about the position.
 
-**Status: integration prototype.** Next.js hosts a stateless MCP server and an embedded React board. You can open a practice position and play legal moves using the board or conversation. The server reconstructs each position from its complete move history. There are no saved games, accounts, engine opponent, or engine-backed hints yet.
+**Status: integration prototype.** Next.js hosts an MCP server and an embedded React board. Each game has one stable UUID used for both players’ moves, reopening, and recovery. The server validates moves using the complete history stored in best-effort app memory. There are no saved games, accounts, engine opponent, or engine-backed hints yet.
 
 ## Run locally
 Requires Node 22 and npm.
@@ -53,11 +53,14 @@ Use the deployed HTTPS `/mcp` endpoint in ChatGPT's developer/custom-app connect
 OpenSpec CLI and Codex workflows are installed. The active change stays open until the full MVP acceptance criteria pass. Next milestones prove Vercel/ChatGPT compatibility and Stockfish execution, then add authenticated saved games, engine play, progressive hints, and review.
 
 
-## Automatic turns and one live board
-Inside ChatGPT, **Ask ChatGPT to reply after my moves** is enabled by default. A player move sends the next-turn request automatically. ChatGPT calls a headless move tool; the existing board polls for the reply and updates in place. Refresh the app's tool definitions and open a new board after this update. Only the explicit open-board tool creates a board view.
+## Games and sessions
+Each `new_game` call creates a fresh UUID. Every move, read, reopen, and recovery requires that same `gameId`; reopening never creates a replacement game. The board displays its UUID and revision. `play_practice_move` requires `gameId`, `expectedRevision`, and a legal SAN/UCI move. There is no stateless fallback that can announce a move without updating a game.
 
-No database or additional service is required. Anonymous positions live in a bounded process-memory cache: at most 1,000 boards, expiring one hour after the last move. Vercel instances do not share this cache and can restart at any time, so synchronization is best-effort. A reply can be unavailable if requests reach different instances. This is a prototype, not durable saved games.
+The board sends an opponent-turn request automatically, polls for committed moves, and applies only non-regressing updates for its own UUID. ChatGPT must commit its move through the tool before announcing it. Only new/resume tools render a board; move, read, and recovery tools do not.
 
-The browser preserves its displayed move history when a server position is missing, older, or conflicting. Try **Check for reply** first. **Recover from history** creates a fresh anonymous key from the displayed moves without creating another board; a reply to the old key may be lost. Recovery does not guarantee requests will keep reaching the same Vercel instance. Cancelling waiting stops local polling, not a ChatGPT turn already submitted. ChatGPT chooses moves here; Stockfish-backed strength remains future work.
+History is saved per UUID in browser storage and, where available, host widget state. A remounted view can restore its newer accepted history without mixing games. Sandboxed storage may be unavailable. A reconnect to the same game must use `open_practice_board(gameId)`, not `new_game`. The current view shows **Live board · v0.3** and a game UUID.
 
-If a board still shows **Practice preview** without the automatic-reply controls, it is the older loaded view. The current board is labeled **Live board · v0.2** and uses a versioned MCP resource URI. Refresh/reconnect the ChatGPT app and start a new chat with a newly opened board; an already open iframe does not upgrade itself. ChatGPT must commit its reply through the move tool—announcing a move in text does not update the board.
+## App memory on Vercel
+No database or additional service is required. Anonymous game positions live in a bounded process-memory cache: at most 1,000 games, expiring one hour after the last move. Vercel instances do not share this cache and can restart, so synchronization remains best-effort. A UUID identifies a game; it does not make memory persistent.
+
+The board preserves displayed history if a server position is missing, older, or conflicting. **Recover from history** restores that same UUID and history; it never generates another ID or overwrites newer/conflicting history. Recovery can lose an unseen reply and cannot eliminate instance routing issues. Cancellation stops local waiting, not a ChatGPT turn already submitted.

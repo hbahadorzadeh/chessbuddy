@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {App} from '@modelcontextprotocol/ext-apps';
 import {describePosition, type Position} from '../lib/chess';
 import './style.css';
+import {restoreSession,sessionSnapshot} from '../lib/widget-session';
 import {BoardSession} from '../lib/board-session';
 
 const glyphs: Record<string,string> = {wk:'♔',wq:'♕',wr:'♖',wb:'♗',wn:'♘',wp:'♙',bk:'♚',bq:'♛',br:'♜',bb:'♝',bn:'♞',bp:'♟'};
@@ -13,6 +14,19 @@ function isPosition(value: unknown): value is Position {
   if (!value || typeof value !== 'object') return false;
   const s=value as Partial<Position>;
   return s.mode==='ephemeral-practice' && Array.isArray(s.moves) && typeof s.fen==='string' && Array.isArray(s.board) && Array.isArray(s.legalMoves);
+}
+type WidgetHost={widgetState?:unknown;setWidgetState?:(state:unknown)=>void};
+const widgetHost=()=> (window as Window & {openai?:WidgetHost}).openai;
+function remember(position:Position){
+  if(!position.gameId)return;
+  const saved=sessionSnapshot(position);
+  try{localStorage.setItem(`chessbuddy:${position.gameId}`,JSON.stringify(saved));}catch{/* Sandboxed storage may be unavailable. */}
+  try{widgetHost()?.setWidgetState?.(saved);}catch{/* The standard bridge remains available. */}
+}
+function restore(incoming:Position){
+  let position=restoreSession(incoming,widgetHost()?.widgetState);
+  try{position=restoreSession(position,JSON.parse(localStorage.getItem(`chessbuddy:${incoming.gameId}`)??'null'));}catch{/* Preserve the supplied position. */}
+  return position;
 }
 type ModelContext = {
   registerTool: (tool:{name:string;description:string;inputSchema:Record<string,unknown>;execute:(args:{move:string;expectedRevision:number})=>Promise<string>})=>void;
@@ -32,7 +46,13 @@ function Board() {
   useEffect(()=>{
     if (!bridge) return;
     let mounted=true;
-    bridge.ontoolresult=(result)=>{if(mounted && !hydrated.current && isPosition(result.structuredContent)){hydrated.current=true;session.current.replace(result.structuredContent);setState(result.structuredContent);setWaiting(false);setSelected(null);}};
+    bridge.ontoolresult=(result)=>{
+      if(!mounted || !isPosition(result.structuredContent))return;
+      const next=restore(result.structuredContent);
+      if(hydrated.current && next.revision<=session.current.position.revision)return;
+      if(!session.current.replace(next))return;
+      hydrated.current=true;remember(next);setState(next);setWaiting(false);setSelected(null);
+    };
     bridge.onhostcontextchanged=(context)=>{
       if (context.theme) document.documentElement.style.colorScheme=context.theme;
     };
@@ -54,41 +74,43 @@ function Board() {
     return ()=>{mounted=false;modelContext?.unregisterTool('chessbuddy_play_on_board');};
   },[]);
   useEffect(()=>{
-    if(!bridge || !waiting)return;
+    if(!bridge || !ready || !state?.gameId)return;
     let stopped=false;
     let timer:ReturnType<typeof setTimeout>;
     let failures=0;
     const deadline=Date.now()+120000;
     async function refresh(){
       const current=session.current.position;
-      if(stopped || !current.boardKey)return;
+      if(stopped || !current.gameId)return;
+      if(session.current.isApplying){timer=setTimeout(()=>void refresh(),1000);return;}
       try{
-        const result=await bridge!.callServerTool({name:'read_practice_board',arguments:{boardKey:current.boardKey}});
+        const result=await bridge!.callServerTool({name:'read_practice_board',arguments:{gameId:current.gameId}});
         if(stopped)return;
-        if(result.isError){session.current.awaitingReply=false;setWaiting(false);setError('The live position is unavailable on this server instance. Your displayed history is intact. Try Check for reply, or Recover from history if it stays unavailable.');return;}
+        if(session.current.isApplying){timer=setTimeout(()=>void refresh(),1000);return;}
+        if(result.isError)throw new Error('This instance has no position for this game.');
         const next=result.structuredContent;
         if(!isPosition(next))throw new Error('Unexpected live board');
-        if(next.boardKey===current.boardKey && next.revision>current.revision && next.moves.slice(0,current.revision).join(' ')===current.moves.join(' ')){
-          session.current.replace(next);setState(next);setWaiting(false);setSelected(null);setError('');await publishPosition(next);return;
+        if(next.gameId===current.gameId && next.revision>current.revision && next.moves.slice(0,current.revision).join(' ')===current.moves.join(' ')){
+          session.current.replace(next);setState(next);setWaiting(false);setSelected(null);setError('');await publishPosition(next);timer=setTimeout(()=>void refresh(),5000);return;
         }
         failures=0;
       }catch{failures++;}
       if(!stopped){
-        if(Date.now()>deadline || failures>=5){session.current.awaitingReply=false;setWaiting(false);setError('The reply has not arrived yet. Use “Check for reply” before requesting another move.');return;}
-        timer=setTimeout(()=>void refresh(),2000);
+        if((waiting && Date.now()>deadline) || failures>=5){session.current.awaitingReply=false;setWaiting(false);setError('The reply has not arrived yet. Use “Check for reply” before requesting another move.');return;}
+        timer=setTimeout(()=>void refresh(),waiting?2000:5000);
       }
     }
     timer=setTimeout(()=>void refresh(),1500);
     return ()=>{stopped=true;clearTimeout(timer);};
-  },[waiting]);
+  },[waiting,ready,state?.gameId]);
   async function checkReply(){
-    if(!bridge || !session.current.position.boardKey)return;
+    if(!bridge || !session.current.position.gameId)return;
     try{
-      const result=await bridge.callServerTool({name:'read_practice_board',arguments:{boardKey:session.current.position.boardKey}});
+      const result=await bridge.callServerTool({name:'read_practice_board',arguments:{gameId:session.current.position.gameId}});
       if(result.isError || !isPosition(result.structuredContent))throw new Error('Live board unavailable or expired.');
       const next=result.structuredContent;
       const current=session.current.position;
-      if(next.boardKey!==current.boardKey || next.revision<current.revision || next.moves.slice(0,current.revision).join(' ')!==current.moves.join(' '))throw new Error('This server instance has an older or conflicting position. Your displayed history was preserved.');
+      if(next.gameId!==current.gameId || next.revision<current.revision || next.moves.slice(0,current.revision).join(' ')!==current.moves.join(' '))throw new Error('This server instance has an older or conflicting position. Your displayed history was preserved.');
       if(next.revision===current.revision){setError('No new reply is visible on this instance yet.');return;}
       session.current.replace(next);setState(next);setWaiting(false);setError('');await publishPosition(result.structuredContent);
     }catch(e){setError(e instanceof Error?e.message:'Could not refresh the board.');}
@@ -98,16 +120,16 @@ function Board() {
     setBusy(true);
     try{
       const history=session.current.position.moves;
-      const result=await bridge.callServerTool({name:'recover_practice_board',arguments:{moves:history}});
-      if(result.isError || !isPosition(result.structuredContent) || result.structuredContent.moves.join(' ')!==history.join(' '))throw new Error('Recovery failed. Your move history is still on this board.');
-      session.current.replace(result.structuredContent);setState(result.structuredContent);setWaiting(false);setSelected(null);setError('Recovered from displayed history. A reply to the previous board key may have been lost.');await publishPosition(result.structuredContent);
+      const result=await bridge.callServerTool({name:'recover_practice_board',arguments:{gameId:session.current.position.gameId,expectedRevision:session.current.position.revision,moves:history}});
+      if(result.isError || !isPosition(result.structuredContent) || result.structuredContent.gameId!==session.current.position.gameId || !history.every((m,i)=>result.structuredContent && (result.structuredContent as Position).moves[i]===m))throw new Error('Recovery failed. Your move history is still on this board.');
+      session.current.replace(result.structuredContent);setState(result.structuredContent);setWaiting(false);setSelected(null);setError('Recovered the same game from displayed history. An unseen reply may still be unavailable.');await publishPosition(result.structuredContent);
     }catch(e){setError(e instanceof Error?e.message:'Recovery failed.');}
     finally{setBusy(false);}
   }
   async function validateMove(moves:string[],move:string):Promise<Position> {
     let next:unknown;
     if(bridge){
-      const result=await bridge.callServerTool({name:'play_practice_move',arguments:{moves,move,...(session.current.position.boardKey?{boardKey:session.current.position.boardKey,expectedRevision:session.current.position.revision}:{})}});
+      const result=await bridge.callServerTool({name:'play_practice_move',arguments:{moves,move,...(session.current.position.gameId?{gameId:session.current.position.gameId,expectedRevision:session.current.position.revision}:{})}});
       if(result.isError)throw new Error('The server rejected that move. Try a legal move.');
       next=result.structuredContent;
     }else{
@@ -119,8 +141,9 @@ function Board() {
     return next;
   }
   async function publishPosition(next:Position) {
+    remember(next);
     if(!bridge)return;
-    try{await bridge.updateModelContext({structuredContent:{chessbuddy:next},content:[{type:'text',text:`Current open ChessBuddy board: ${next.fen}. Complete SAN history: ${next.moves.join(' ')}. Revision ${next.revision}. ${next.turn} to move. Board key: ${next.boardKey ?? "not available"}. ${next.boardKey?"Use play_practice_move with this boardKey and expectedRevision to update this board":"Use chessbuddy_play_on_board to update this board"}, never open_practice_board for an ordinary reply. No engine analysis is available.`}]});}
+    try{await bridge.updateModelContext({structuredContent:{chessbuddy:next},content:[{type:'text',text:`Current open ChessBuddy board: ${next.fen}. Complete SAN history: ${next.moves.join(' ')}. Revision ${next.revision}. ${next.turn} to move. Game UUID: ${next.gameId ?? "not available"}. ${next.gameId?"Use play_practice_move with this gameId and expectedRevision to update this board":"Use chessbuddy_play_on_board to update this board"}, never open_practice_board for an ordinary reply. No engine analysis is available.`}]});}
     catch{setError('Move accepted, but position context could not update. The turn request includes the complete position.');}
   }
   async function requestReply(position:Position) {
@@ -128,8 +151,8 @@ function Board() {
     session.current.awaitingReply=true;setWaiting(true);setError('');
     try{
       const modelContext=(document as Document & {modelContext?:ModelContext}).modelContext;
-      if(position.boardKey){
-        const result=await bridge.sendMessage({role:'user',content:[{type:'text',text:`I played ${position.moves.at(-1) ?? 'no move yet'}. It is your turn as ${position.turn} on the existing ChessBuddy board. Choose one legal move and call play_practice_move with boardKey "${position.boardKey}", expectedRevision ${position.revision}, moves ${JSON.stringify(position.moves)}, and your chosen move. The open board will update automatically. Do not call open_practice_board or draw another board. FEN: ${position.fen}. Legal SAN moves: ${position.legalMoves.map(m=>m.san).join(', ')}. Explain the idea briefly without claiming engine analysis.`}]});
+      if(position.gameId){
+        const result=await bridge.sendMessage({role:'user',content:[{type:'text',text:`I played ${position.moves.at(-1) ?? 'no move yet'}. It is your turn as ${position.turn} on the existing ChessBuddy board. Choose one legal move and call play_practice_move with gameId "${position.gameId}", expectedRevision ${position.revision}, and your chosen move. The open board will update automatically. Do not call open_practice_board or draw another board. FEN: ${position.fen}. Legal SAN moves: ${position.legalMoves.map(m=>m.san).join(', ')}. Explain the idea briefly without claiming engine analysis.`}]});
         if(result.isError)throw new Error('ChatGPT could not accept the turn request.');
       }else if(modelContext){
         const result=await bridge.sendMessage({role:'user',content:[{type:'text',text:`I played ${position.moves.at(-1)} on the open ChessBuddy board. It is your turn as ${position.turn}. Choose one legal move and apply it using chessbuddy_play_on_board with expectedRevision ${position.revision}. Do not open or draw another board. FEN: ${position.fen}. Full SAN history: ${JSON.stringify(position.moves)}. Legal moves: ${position.legalMoves.map(m=>m.san).join(', ')}. Explain your idea briefly; do not claim engine analysis.`}]});
@@ -140,7 +163,7 @@ function Board() {
         const next=await session.current.apply(result.content.text.trim(),position.revision,validateMove,true);
         setState(next);setWaiting(false);await publishPosition(next);
       }else{
-        throw new Error('This ChatGPT host cannot update an existing board automatically. Use ChatGPT Desktop with board tools, or turn off automatic replies for practice.');
+        throw new Error('This view has no game UUID. Reopen the existing game by its UUID, or explicitly start a new game.');
       }
     }catch(e){session.current.awaitingReply=false;setWaiting(false);setError(e instanceof Error?e.message:'Could not request the next move.');}
   }
@@ -160,7 +183,7 @@ function Board() {
     }catch(e){setError(e instanceof Error?e.message:'Move failed. Try again.');}
     finally{setBusy(false);}
   }
-  return <main><header><span className="logo">♞</span><div><p className="eyebrow">CHESSBUDDY</p><h1>Think one move ahead.</h1></div><span className="badge">Live board · v0.2</span></header>
+  return <main><header><span className="logo">♞</span><div><p className="eyebrow">CHESSBUDDY</p><h1>Think one move ahead.</h1></div><span className="badge">Live board · v0.3</span></header>
     <p className="intro">Select a piece, then its destination. Ask ChatGPT about the ideas behind the position.</p>
     <div role="status" aria-live="polite" className="status">{!state?'Waiting for your position…':waiting?'ChatGPT is choosing a move…':busy?'Checking your move…':`${state.turn} to move · ${state.status}`}</div>
     {state && <div className="board" aria-label="Chessboard, White at bottom" aria-busy={busy}>{state.board.flatMap((rank,r)=>rank.map((piece,c)=>{
@@ -168,12 +191,13 @@ function Board() {
       const target=selected && state.legalMoves.some(m=>m.from===selected&&m.to===square);
       return <button key={square} disabled={!ready||busy||waiting||state.gameOver} aria-pressed={selected===square} aria-label={`${square}${piece?`, ${piece.color==='w'?'White':'Black'} ${names[piece.type]}`:', empty'}${target?', legal destination':''}`} className={`square ${(r+c)%2?'dark':'light'} ${selected===square?'selected':''} ${target?'target':''} ${piece?.color==='w'?'white-piece':'black-piece'}`} onClick={()=>void move(square)}><span aria-hidden="true">{piece?glyphs[piece.color+piece.type]:''}</span><small aria-hidden="true">{square}</small></button>;
     }))}</div>}
+    {state?.gameId && <p className="game-id">Game: <code>{state.gameId}</code> · revision {state.revision}</p>}
     <div className="settings"><label>Promote to <select value={promotion} onChange={e=>setPromotion(e.target.value)}><option value="q">Queen</option><option value="r">Rook</option><option value="b">Bishop</option><option value="n">Knight</option></select></label><span>White at bottom</span></div>
     {!local && <label className="auto-reply"><input type="checkbox" checked={autoReply} onChange={e=>{setAutoReply(e.target.checked);if(!e.target.checked){session.current.awaitingReply=false;setWaiting(false);}}}/> Ask ChatGPT to reply after my moves</label>}
     {!local && state && !state.gameOver && !waiting && !busy && <button onClick={()=>void requestReply(session.current.position)}>Ask ChatGPT to move</button>}
-    {state?.boardKey && !busy && <button onClick={()=>void checkReply()}>Check for reply</button>}
-    {state?.boardKey && !busy && !waiting && error && <button onClick={()=>void recoverBoard()}>Recover from history</button>}
-    {waiting && <button onClick={()=>{session.current.awaitingReply=false;setWaiting(false);setError(session.current.position.boardKey?'Stopped waiting. A requested reply may still arrive; use Check for reply.':'Turn request cancelled on this board. Late replies will be rejected.');}}>Cancel waiting</button>}
+    {state?.gameId && !busy && <button onClick={()=>void checkReply()}>Check for reply</button>}
+    {state?.gameId && !busy && !waiting && error && <button onClick={()=>void recoverBoard()}>Recover from history</button>}
+    {waiting && <button onClick={()=>{session.current.awaitingReply=false;setWaiting(false);setError(session.current.position.gameId?'Stopped waiting. A requested reply may still arrive; use Check for reply.':'Turn request cancelled on this board. Late replies will be rejected.');}}>Cancel waiting</button>}
     {error && <p role="alert" className="error">{error}</p>}
     <section><h2>Move history</h2><p className="history">{state?.moves.length?state.moves.map((m,i)=>`${i%2===0?`${Math.floor(i/2)+1}. `:''}${m}`).join(' '):'Your first move starts here.'}</p></section>
     <footer>Live boards use temporary app memory and may reset on Vercel. Your visible move history stays on this board. There are no accounts or engine opponent. ChatGPT can discuss the position; engine-backed coaching comes next.</footer>
