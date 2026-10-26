@@ -11,7 +11,11 @@
           "Give me a gentle hint about my current position without revealing a move.",
           "Replay my supplied PGN from a later position and explain the strategy."
         ],
-        "developerName": "Hamed Bahadorzadeh"
+        "developerName": "Hamed Bahadorzadeh",
+        "websiteURL": "https://chessbuddy-self.vercel.app",
+        "supportURL": "https://chessbuddy-self.vercel.app/support",
+        "privacyPolicyURL": "https://chessbuddy-self.vercel.app/privacy",
+        "termsOfServiceURL": "https://chessbuddy-self.vercel.app/terms"
       },
       "publication": {
         "release_notes": "Initial submission draft: interactive legal chess games with stable UUIDs, elapsed timers, move tracking, authored guidance, and PGN/FEN replay with optional recorded timing.",

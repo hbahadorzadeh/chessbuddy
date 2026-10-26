@@ -1,22 +1,33 @@
-# ChessBuddy privacy policy — draft for publisher review
+# ChessBuddy Privacy Notice
 
-Status: unpublished draft. Publisher: Hamed Bahadorzadeh. Contact: h.bahadorzadeh@gmail.com.
+Publication source: https://chessbuddy-self.vercel.app/privacy
 
-## What the app processes
-ChessBuddy processes the chess positions, moves, game/replay identifiers, timing data, PGN headers, and other chess inputs you provide. Imported PGN may include player names or other text you choose to include. No ChessBuddy account sign-in or purchase is currently required.
+Effective 26 October 2026 · Hamed Bahadorzadeh
 
-## Purpose and sharing
-The app uses this information to validate moves, maintain an anonymous practice session, track elapsed time, replay positions, and provide position-aware teaching material. Tool inputs/results and selected position context pass through ChatGPT. Vercel hosts the application and can process technical request information and logs. These services have their own terms and privacy practices. The application code does not currently include an additional analytics SDK or an external database.
+## What ChessBuddy processes
 
-## Storage and retention
-Anonymous live games use bounded instance-local server memory with a seven-day logical expiry from the last committed move. Replays expire seven days after import. Records may disappear sooner after instance loss or capacity eviction. This does not guarantee seven days of availability or an always-running physical deletion process.
+ChessBuddy is a free chess practice and replay app operated by Hamed Bahadorzadeh. It processes the moves, positions, game and replay IDs, timings, PGN headers, and other chess information you provide to run games, replays, and teaching features. No ChessBuddy account or purchase is required. Imported records may contain player names or other text you include.
 
-Where the host/browser permits it, the app stores the game identifier, legal move history, timing, and expiry in browser/host widget state to restore the visible game. Expired snapshots are ignored and cleaned on access. Current replay selection can be saved in host widget state. Clearing browser storage or the relevant ChatGPT app/conversation state can remove those local snapshots, subject to the host's controls.
+## Temporary storage
 
-## Access and requests
-Game identifiers are anonymous references, not account authentication. Do not publish active identifiers or upload confidential data. Contact h.bahadorzadeh@gmail.com for privacy questions or requests. Exact request procedures and any response commitments need publisher approval before publication.
+Live games use bounded server memory with a seven-day expiry from the last committed move. Replays expire seven days after import. Server restarts or capacity limits may remove records sooner; this is not permanent storage or a seven-day availability guarantee.
 
-## Decisions still required before publication
-- Confirm Vercel's actual logging, analytics settings, technical log retention, and applicable service/subprocessor details.
-- Confirm the intended audience/age policy and the final privacy request/deletion procedure.
-- Approve the wording and a publication/effective date. This draft is not a declaration of legal compliance or an approved public policy.
+Where supported, your browser and ChatGPT widget state also store game history, IDs, timing, expiry, or replay selection to restore the view. Expired game snapshots are ignored and cleaned when accessed. You can clear local browser data and use ChatGPT’s controls for its stored app or conversation data.
+
+## ChatGPT and hosting
+
+Tool requests, results, and selected position context pass through ChatGPT. Vercel hosts ChessBuddy and may process technical request information and logs. These providers have their own privacy practices and retention settings, separate from the game expiry above. The ChessBuddy application code does not include an additional analytics SDK or an external game database.
+
+## Use appropriate chess data
+
+Use ChessBuddy only if you meet ChatGPT’s eligibility requirements, with parent or guardian permission where required. Do not upload secrets or sensitive information. Game and replay IDs are anonymous access references, not account authentication; share an active ID only with people you intend to give access.
+
+## Questions and privacy requests
+
+Contact h.bahadorzadeh@gmail.com for questions or requests about data processed by ChessBuddy. Describe your request and include only information needed to identify it; do not post active game IDs publicly. Records are anonymous and temporary, so locating a particular record may not always be possible. Requests concerning your ChatGPT account or its conversations should also use OpenAI’s privacy controls. Applicable privacy rights remain unaffected.
+
+## Updates
+
+This notice describes the current app. If its data practices change, this page will be updated and material changes will be explained where practicable or required by law.
+
+Contact: h.bahadorzadeh@gmail.com

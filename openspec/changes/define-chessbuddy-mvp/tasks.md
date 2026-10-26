@@ -76,3 +76,8 @@
 - [x] 11.4 Share the displayed replay position with ChatGPT and allow model seeking without changing an active game.
 - [x] 11.5 Test partial starts, PGN setup/timing, invalid inputs, special moves, cursor conflicts, retention, and live-game isolation.
 - [ ] 11.6 Verify production build, deployed tools/resources, and in-host replay controls with the user.
+
+## 12. Public policy pages
+- [x] 12.1 Replace the long policy drafts with short factual notices using confirmed publisher/contact and audience choices.
+- [x] 12.2 Add /privacy and /terms, shared website navigation, effective date, and the four listing URLs.
+- [ ] 12.3 Verify production build, deployment, and public policy content without claiming directory submission.

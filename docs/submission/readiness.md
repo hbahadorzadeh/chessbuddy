@@ -15,8 +15,8 @@ This is preparation material, not an uploaded package, submitted app, or approve
 
 ## Still needed before packaging/submission
 - Publisher must complete portal identity verification; selected name/country/free declarations are recorded.
-- Public support contact confirmed: h.bahadorzadeh@gmail.com. Support page implemented; policy drafts remain unpublished.
-- Four accessible HTTPS pages: website identifying the publisher, support with a working contact channel, privacy policy, and terms of service. Existing app homepage is https://chessbuddy-self.vercel.app, but publisher identification and the other pages are not complete.
+- Public support contact confirmed: h.bahadorzadeh@gmail.com. Support page implemented; short policy pages are implemented at /privacy and /terms for this deployment.
+- Verify the four public listing URLs after deployment: homepage, /support, /privacy, and /terms. All four values are present in listing-draft.json; successful deployment and public content checks are still required.
 - Actual square icon files: listing logo at least 256 × 256 and composer icon at least 48 × 48, PNG up to 5 MiB. Proposed direction: a simple green knight and one light board square, without small text. Dark-mode assets/colors are optional.
 - Real recorded demonstration in ChatGPT of the version being submitted, hosted at a reviewer-accessible URL and verified by playback. The walkthrough is a script, not a recording.
 - In-host test evidence for five positive and three negative review cases. Automated domain/MCP/HTTP checks do not establish model tool choice or host rendering behavior.

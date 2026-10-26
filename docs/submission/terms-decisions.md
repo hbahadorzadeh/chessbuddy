@@ -18,3 +18,6 @@ These recommendations are reflected in terms-draft.md and remain proposals until
 - Whether a local reviewer recommends a specific governing-law/forum or liability clause.
 
 No live terms page has been published, and no platform attestation has been made. The existing policy and terms drafts are review materials rather than completed submission URLs.
+
+## Short policy publication
+The publisher subsequently authorized simplifying and publishing the short notices. Their website source is lib/policies.ts with an effective date of 26 October 2026. It uses the confirmed ChatGPT-eligible audience and country-neutral wording, preserves mandatory rights, and adds no monetary liability cap or exclusive forum. The earlier long proposal is superseded by the short publication source; no directory attestation or submission is implied.

@@ -91,3 +91,6 @@ For example, a tool request can use:
 Famous games can be reviewed by importing their PGN; player/event headers are not independently authenticated and no historical database is bundled. Per-move timings come from the current game's ledger, explicit durationsMs, or PGN `%emt h:mm:ss` comments. `%clk` is a clock balance and is not guessed into an elapsed duration. Missing durations use a 1.5-second study pace, scaled by speed; rendering has a 50 ms minimum interval. Recorded player totals show only the supplied replay segment and identify partial timing.
 
 Autoplay runs locally to avoid adding server latency to every step. It publishes the viewed position to ChatGPT context; pausing/reviewing commits the selected cursor. Model seeks are picked up through polling and pause playback. Replay storage is bounded app memory with seven-day expiry from import, so synchronization can be lost on Vercel; the loaded local sequence stays usable. Active-game retention remains seven days after the last committed move.
+
+## Publisher and policies
+ChessBuddy is free and operated by Hamed Bahadorzadeh. Public pages are `/support`, `/privacy`, and `/terms`, linked from the website footer. The short notices describe the actual temporary game data, provider processing, app-memory limits, and eligibility requirements. Directory submission is a separate step.
