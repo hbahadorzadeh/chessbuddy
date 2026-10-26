@@ -36,3 +36,14 @@ The board SHALL support tap and keyboard interaction, square and piece labels, p
 #### Scenario: Stale widget
 - **WHEN** the widget submits a move from an old revision
 - **THEN** the server rejects the mutation and the widget refreshes authoritative state
+
+### Requirement: Explicit ephemeral integration prototype
+The first integration slice SHALL expose stateless practice tools accepting complete move history, validate every move on the server, and label the experience as a prototype without saved games or an engine opponent. The board SHALL use the standard MCP Apps bridge and publish accepted position updates to model context.
+
+#### Scenario: Practice move through a tool
+- **WHEN** the current history and a legal SAN or UCI move are submitted
+- **THEN** the server returns the reconstructed position, complete SAN history, legal moves, and revision without storing a game
+
+#### Scenario: Context synchronization fails
+- **WHEN** a board move succeeds but the host rejects its model-context update
+- **THEN** the board keeps the accepted position and tells the player that ChatGPT context did not update

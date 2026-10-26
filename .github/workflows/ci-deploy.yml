@@ -25,11 +25,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # Bootstrap only: pin OpenSpec locally with the app scaffold (task 2.2).
-      - name: Validate OpenSpec change
+      - run: npm ci
+      - name: Validate all OpenSpec changes and specifications
         env:
           OPENSPEC_TELEMETRY: '0'
-        run: npx --yes --package @fission-ai/openspec openspec validate define-chessbuddy-mvp --strict
+        run: npm run spec:validate
 
   build:
     needs: specs
@@ -67,10 +67,23 @@ jobs:
         run: npm test
       - if: steps.app.outputs.ready == 'true'
         run: npm run build
+      - name: Smoke test production server and MCP
+        if: steps.app.outputs.ready == 'true'
+        shell: bash
+        run: |
+          npm start -- --hostname 127.0.0.1 > /tmp/chessbuddy-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/smoke.mjs
 
   deploy:
     needs: [specs, build]
     if: >-
+      vars.VERCEL_DEPLOY_ENABLED == 'true' &&
       needs.build.outputs.app-ready == 'true' &&
       ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
@@ -101,7 +114,6 @@ jobs:
           test -n "$VERCEL_ORG_ID" || { echo 'Missing VERCEL_ORG_ID environment secret.' >&2; exit 1; }
           test -n "$VERCEL_PROJECT_ID" || { echo 'Missing VERCEL_PROJECT_ID environment secret.' >&2; exit 1; }
       - run: npm ci
-      # Add a pinned Vercel CLI devDependency when scaffolding the app.
       - name: Pull deployment settings
         shell: bash
         run: npx --no-install vercel pull --yes --environment="$DEPLOY_TARGET" --token="$VERCEL_TOKEN"

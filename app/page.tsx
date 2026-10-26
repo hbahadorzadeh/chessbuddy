@@ -1,0 +1,3 @@
+export default function Home() {
+  return <main className="landing"><p className="eyebrow">CHESSBUDDY · INTEGRATION PREVIEW</p><h1>A move.<br/>A question.<br/>A little wiser.</h1><p>Practice chess inside ChatGPT, with a board you can play and a conversation you can learn from.</p><section><h2>Connect in ChatGPT</h2><p>Add this deployment’s <code>/mcp</code> URL as a custom app in ChatGPT developer mode, then ask: “Open a ChessBuddy practice board.”</p><p>This preview validates legal moves and shares the position with ChatGPT. Positions travel with each tool call; there are no saved games, accounts, or engine opponent yet.</p><a href="/board">Try the board locally ↗</a></section></main>;
+}

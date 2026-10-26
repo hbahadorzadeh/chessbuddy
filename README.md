@@ -1,27 +1,53 @@
 # ChessBuddy
-Learn chess by playing inside ChatGPT, with an interactive board and a coach you can ask for help.
+Learn chess inside ChatGPT, with a playable board and a conversation about the position.
 
-**Status: specification phase.** The Next.js app, engine integration, database, and ChatGPT connection are planned, not implemented. The repository contains an OpenSpec change and a GitHub Actions deployment foundation. No service has been deployed.
+**Status: integration prototype.** Next.js hosts a stateless MCP server and an embedded React board. You can open a practice position and play legal moves using the board or conversation. The server reconstructs each position from its complete move history. There are no saved games, accounts, engine opponent, or engine-backed hints yet.
 
-## Review the project
-- [Proposal](openspec/changes/define-chessbuddy-mvp/proposal.md)
-- [Technical design and tool contracts](openspec/changes/define-chessbuddy-mvp/design.md)
-- [Five capability specifications](openspec/changes/define-chessbuddy-mvp/specs)
-- [Implementation checklist](openspec/changes/define-chessbuddy-mvp/tasks.md)
-- [CI and Vercel setup](docs/deployment.md)
-
-The MVP supports a complete game against an adjustable engine, conversational and board moves, progressive hints, explanations, durable game recovery, and a review of up to three learning moments. ChatGPT supplies the conversation; Next.js hosts the MCP tools and board resources on Vercel.
-
-## OpenSpec workflow
-Install the official CLI using the [OpenSpec instructions](https://github.com/Fission-AI/OpenSpec#quick-start), then run:
+## Run locally
+Requires Node 22 and npm.
 
 ```sh
-openspec init --tools codex
-openspec validate define-chessbuddy-mvp --strict
-openspec status --change define-chessbuddy-mvp
+npm ci
+npm run dev
 ```
 
-The proposal and delta specs were authored directly in OpenSpec format. CLI initialization and official validation have not run in the authoring environment because its network proxy is unreachable. CI will run strict validation. Review the proposal, then implement tasks in order. Keep this change active until acceptance and archive it afterward to populate the canonical specs.
+Open http://localhost:3000/board for the browser harness. The home page explains the ChatGPT connection; the MCP endpoint is http://localhost:3000/mcp. The browser harness is for development; ChatGPT is the intended interface.
 
-## Planned stack
-Next.js App Router, React, TypeScript, MCP/Apps SDK, chess.js, Stockfish through a bounded adapter, managed PostgreSQL, OAuth account linking, GitHub Actions, and Vercel. The first implementation milestone proves the embedded board and engine runtime on Vercel before building the complete game.
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run spec:validate
+npm run build
+# With npm start running, check the HTTP/MCP integration:
+node scripts/smoke.mjs
+```
+
+## Configure Vercel from your authenticated computer
+Clone this repository and run:
+
+```sh
+bash scripts/setup-vercel.sh
+```
+
+You need authenticated Vercel and GitHub CLIs (run `vercel login` and `gh auth login` locally if necessary). The script links `chessbuddy` and `chessbuddy-preview` under your chosen Vercel account/team and sets the GitHub environment secrets. It prompts for a scoped Vercel token locally with hidden input. Never paste credentials into chat.
+
+After the application commit is on main, enable deployment:
+
+```sh
+gh variable set VERCEL_DEPLOY_ENABLED --repo hbahadorzadeh/chessbuddy --body true
+gh workflow run ci-deploy.yml --repo hbahadorzadeh/chessbuddy --ref main
+```
+
+See [deployment instructions](docs/deployment.md) for account protections and ChatGPT acceptance checks.
+
+## Connect in ChatGPT
+Use the deployed HTTPS `/mcp` endpoint in ChatGPT's developer/custom-app connection flow (where available). This prototype has no authentication because it stores no private data. Ask “Open a ChessBuddy practice board,” play e4 on the board, then ask “What position is on the board?” Confirm ChatGPT sees Black to move and the updated FEN/history. Conversational moves must use the latest complete move history. Rendering and context synchronization in an actual ChatGPT session remain unverified until deployment and connection.
+
+## Project specification
+- [Proposal](openspec/changes/define-chessbuddy-mvp/proposal.md)
+- [Architecture and tool contracts](openspec/changes/define-chessbuddy-mvp/design.md)
+- [Capability requirements](openspec/changes/define-chessbuddy-mvp/specs)
+- [Implementation checklist](openspec/changes/define-chessbuddy-mvp/tasks.md)
+
+OpenSpec CLI and Codex workflows are installed. The active change stays open until the full MVP acceptance criteria pass. Next milestones prove Vercel/ChatGPT compatibility and Stockfish execution, then add authenticated saved games, engine play, progressive hints, and review.

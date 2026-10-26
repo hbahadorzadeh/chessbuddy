@@ -1,12 +1,12 @@
 ## 1. Specification foundation
 - [x] 1.1 Capture MVP proposal, architecture, capability scenarios, and deployment plan.
 - [x] 1.2 Supply GitHub Actions and setup documentation with explicit scaffold gating.
-- [ ] 1.3 Run official OpenSpec strict validation (CLI installation blocked by environment networking).
+- [x] 1.3 Run official OpenSpec strict validation.
 - [x] 1.4 Publish files to hbahadorzadeh/chessbuddy.
 
 ## 2. Compatibility and project foundation
-- [ ] 2.1 Scaffold current stable Next.js App Router + TypeScript, pin compatible packages, and commit package-lock.json; add lint, typecheck, test, and build scripts.
-- [ ] 2.2 Install OpenSpec locally, pin its version in package-lock.json, initialize Codex integration, and use the local CLI in CI.
+- [x] 2.1 Scaffold current stable Next.js App Router + TypeScript, pin compatible packages, and commit package-lock.json; add lint, typecheck, test, and build scripts.
+- [x] 2.2 Install OpenSpec locally, pin its version in package-lock.json, initialize Codex integration, and use the local CLI in CI.
 - [ ] 2.3 Read current Apps SDK and MCP Extensions guidance; prove MCP handshake, board resource rendering, widget tool calls, and model-context synchronization inside ChatGPT on a Vercel preview.
 - [ ] 2.4 Measure Stockfish cold/warm latency and enforce timeout; decide package/worker, deployment limits, and licensing notices.
 - [ ] 2.5 Configure OAuth, owned PostgreSQL schema/migrations, and separate preview/production data.
@@ -30,3 +30,10 @@
 - [ ] 5.3 Connect the deployed MCP app to ChatGPT; complete a game using board and conversation, request hints, recover an interrupted turn, resume across sessions, and review it.
 - [ ] 5.4 Verify keyboard/mobile board operation, owner isolation, secret redaction, latency budgets, and migration/rollback procedures.
 - [ ] 5.5 Archive the OpenSpec change only after acceptance; promote delta specs into openspec/specs.
+
+## 6. Integration prototype (first implementation slice)
+- [x] 6.1 Add a stateless practice-board tool and legal next-position tool with complete move history inputs; explicitly exclude saved games and engine play from the prototype.
+- [x] 6.2 Bundle a React MCP App with the standard host bridge, board moves, promotion choice, keyboard controls, and position context updates.
+- [x] 6.3 Supply a browser harness and shared server validation plus domain/MCP tests.
+- [x] 6.4 Add a local Vercel/GitHub setup script without embedding credentials.
+- [ ] 6.5 Verify the deployed board inside ChatGPT after Vercel account configuration.

@@ -45,3 +45,8 @@ First validate ChatGPT widget + MCP handshake and engine execution on a Vercel p
 - Verified Stockfish runtime/package versus external worker after the deployment spike.
 - Vercel project IDs and stable production hostname for ChatGPT connection.
 - Preview database isolation and preview OAuth callback configuration.
+
+## First Implementation Slice: Ephemeral Practice Prototype
+Before persistent games, expose `open_practice_board(moves?)` and `play_practice_move(moves, move)` as stateless position calculators. Inputs carry the complete SAN history from the standard starting position, and outputs contain FEN, history, revision, legal moves, and board squares. The widget uses the standard MCP Apps bridge and updates model context after a move. No process-local game store, account ownership, engine analysis, or game ID is implied. Both sides can be moved for practice. These tools remain separate from the production game contract above and are read-only with respect to server state. The local `/board` harness uses the same domain service via `/api/demo`. A public unauthenticated MCP endpoint is appropriate only for this bounded, nonpersistent prototype; OAuth and persistence remain prerequisites for saved games.
+
+Deployment is opt-in through GitHub repository variable `VERCEL_DEPLOY_ENABLED=true` after environment secrets are configured. Checks run regardless. The repository ships a pinned CLI and a local setup script for the user's authenticated computer; credentials are never collected through chat. Vercel Git deployments are disabled in vercel.json so GitHub Actions owns automatic deployment.

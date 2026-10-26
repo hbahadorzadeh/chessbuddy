@@ -1,34 +1,37 @@
-# GitHub Actions and Vercel
+# Deployment and ChatGPT verification
 
-The workflow is present, but this is a specification repository. It validates the OpenSpec change and skips app build/deployment until a root package.json exists. It does not claim to build a Next.js app before that app is implemented.
+The Next.js scaffold, pinned dependencies/lockfile, MCP practice tools, and embedded board are implemented. GitHub Actions runs strict OpenSpec checks, typecheck, lint, tests, and production build. Deployments are disabled until repository variable `VERCEL_DEPLOY_ENABLED` is `true`.
 
-## Application prerequisites
-1. Scaffold Next.js App Router and TypeScript at repository root using Node 22 and npm. Commit package-lock.json. Use current supported dependency versions and pin the Vercel CLI and OpenSpec CLI as devDependencies.
-2. Provide scripts `typecheck`, `lint`, `test`, and `build`. Tests must cover meaningful chess, ownership, concurrency, and recovery behavior. Required scripts intentionally do not use `--if-present`.
-3. Replace the bootstrap OpenSpec npx installation with the locked local CLI after npm ci. Continue validating active changes as change names evolve; after archival, validate canonical specs instead of the archived change name.
-4. Make the generic Next.js build run without production credentials. Validate required runtime configuration at request time or in deployment validation, rather than contacting a production database during builds.
+## Vercel and GitHub account setup
+Run `bash scripts/setup-vercel.sh` on the computer where Vercel is authenticated. Install/authenticate GitHub CLI first. The script asks for the Vercel account/team slug, links or creates `chessbuddy` and `chessbuddy-preview`, creates GitHub environments `production` and `preview`, and writes their project/org IDs using GitHub CLI. It prompts for a Vercel token locally with hidden input and sends it to both environments. Use a token scoped to the selected Vercel account/team, with access to both projects. Never commit it or send it through chat.
 
-## One-time hosting setup
-1. Create production and preview Vercel projects, both configured for Next.js, repository root, and Node 22. Use different project IDs and isolated databases/OAuth settings. Disable Vercel's automatic Git deployments if GitHub Actions owns deployment.
-2. In GitHub, create environments named `production` and `preview`. Add environment secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` in each. Use a token scoped to the required Vercel projects. Do not send secrets through chat or commit them.
-3. Restrict production to main. Configure preview environment approval according to collaborator trust because same-repository PR code can execute with preview secrets. Fork PRs never deploy; the workflow uses pull_request, not pull_request_target.
-4. In the corresponding Vercel environments, configure database URL, verified OAuth issuer/audience and credentials, stable app origin, and engine worker credentials if the spike selects a worker. Confirm actual variable names during implementation. Keep server credentials out of NEXT_PUBLIC variables and widget resources.
-5. Give ChatGPT a stable production MCP URL (planned `/mcp`) and configure OAuth/resource metadata using the supported ChatGPT developer connection flow. Verify account access and embedded-board rendering. Vercel deployment alone does not complete this connection.
+The same secret names are used in each environment: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`. Project IDs differ. Check new projects use Next.js, root directory `.`, and Node 22. The repository's vercel.json disables automatic Git deployments; GitHub Actions owns deployment. Preview has no production data or credentials.
 
-## Workflow behavior
-- All main pushes and PRs targeting main: strict OpenSpec validation; when scaffold exists, npm ci, typecheck, lint, tests, Next.js build.
-- Main after passing checks: pull production Vercel settings, Vercel production build, deploy prebuilt output.
-- Same-repository PR after passing checks: pull preview settings from the separate preview project, build, deploy prebuilt output.
-- Fork PR: checks only; no deployment job or deployment secrets.
-- Manual dispatch: production deployment only on main and after checks.
-- Failed checks prevent deploy. Missing secrets fail before the Vercel CLI runs. Deployment URLs appear in the job summary and environment.
+Restrict production to main in GitHub environment settings. Configure preview approval according to collaborator trust: same-repository PR code executes with preview deployment secrets. Fork PRs run checks only and never deploy. The workflow does not use pull_request_target. For private repositories, verify GitHub plan support for environment secrets/protections.
 
-The deploy job repeats the build with Vercel's settings to produce the platform-specific output. No artifact is rebuilt after `vercel build` before `vercel deploy --prebuilt`.
+When configuration is complete and the app commit is on main:
 
-## Verification and rollback
-After first deployment, verify MCP initialization, authenticated tool access, board resource CSP, a legal move, state persistence across requests, and timeout recovery inside ChatGPT. Measure engine cold/warm latency within the selected Vercel execution limit.
+```sh
+gh variable set VERCEL_DEPLOY_ENABLED --repo hbahadorzadeh/chessbuddy --body true
+gh workflow run ci-deploy.yml --repo hbahadorzadeh/chessbuddy --ref main
+gh run list --repo hbahadorzadeh/chessbuddy --limit 5
+```
 
-Record the last healthy production deployment. Roll back by promoting that deployment in Vercel and verify the stable MCP URL and a saved game. Use backward-compatible expand/contract migrations; a deployment rollback does not automatically undo database migrations. Do not run production migrations from untrusted preview code.
+If this change is still on a PR branch, merge it after checks pass before dispatching main. To test preview deployment, enable the variable and update/re-run the same-repository PR workflow. Missing secrets fail the deployment job clearly before calling Vercel. Failed checks block deployment. The workflow records the deployment URL in its job summary and GitHub environment.
 
-## Authoring limitations
-The authoring environment could not reach its configured HTTP proxy, so official OpenSpec CLI validation, dependency installation, Next.js build, GitHub Actions execution, and Vercel deployment were not run. The connected GitHub tools do not expose repository creation; the repository must exist before connector publication.
+The deploy job pulls target-specific Vercel settings, builds Vercel output, then deploys that prebuilt output. The generic check build runs without account credentials. Generated board HTML is built before Next.js and traced into `/mcp` and `/board` functions.
+
+## First ChatGPT connection
+1. Use an accessible HTTPS deployment. If Vercel deployment protection blocks ChatGPT from fetching MCP, configure intended access for this nonprivate prototype or use a suitable accessible deployment. Do not put protection bypass secrets in committed URLs.
+2. Add `https://YOUR-DEPLOYMENT/mcp` using ChatGPT's developer/custom-app connection flow, where supported. Select no authentication for this stateless public prototype. Deploying to Vercel does not automatically install an app in ChatGPT.
+3. Ask “Open a ChessBuddy practice board.” Verify the embedded board renders, rather than only a text result.
+4. Play e2–e4 using the board. Check Black to move and ask ChatGPT for the current FEN/history. The model should receive the updated position through the MCP Apps bridge.
+5. Ask “Play e5.” Verify the latest complete history is sent, server legality validation succeeds, and the displayed position updates.
+6. Try an illegal move, keyboard controls, a narrow mobile width, promotion, and a new practice board. Confirm clear failure messages and no invented engine analysis.
+
+These in-host checks remain pending until deployment and a ChatGPT connection are available. Unit/integration tests validate the MCP protocol and move rules; they cannot establish that ChatGPT rendered the view.
+
+## Next stages and rollback
+Saved games require verified OAuth ownership, durable storage, revision/idempotency protection, and isolated environment configuration before shipping. The Stockfish runtime must be measured on Vercel before engine play or analysis is promised. No OpenAI API key is needed for the host conversation.
+
+Record the last healthy production deployment. Roll back by promoting it in Vercel, then verify the stable MCP URL and board resource. Once a database exists, use backward-compatible migrations; a code rollback does not undo database migrations.
