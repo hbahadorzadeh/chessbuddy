@@ -44,5 +44,5 @@
 - [x] 7.2 Implement bounded instance-local memory with expiry, history isolation, and atomic per-process revisions; add no external service.
 - [x] 7.3 Add automatic turn messages, same-view polling, timeout/cancel behavior, and explicit recovery without silent rollback.
 - [x] 7.4 Test invalid and concurrent replies, expiry, eviction, cold-instance recovery, and MCP tool metadata.
-- [ ] 7.5 Verify CI, deployment, and live endpoint after publication.
+- [x] 7.5 Verify CI, deployment, and live endpoint after publication.
 - [ ] 7.6 Verify automatic handoff and board continuity in the user's browser ChatGPT session.
