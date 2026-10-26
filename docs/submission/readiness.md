@@ -1,6 +1,6 @@
 # Public submission preparation — incomplete draft
 
-This is preparation material, not an uploaded package, submitted app, or approved release. No public-submission legal attestations have been made. The listing JSON intentionally omits unknown publisher facts and URLs; it is not a final plugin manifest or submission-ready ZIP.
+This is preparation material, not an uploaded package, submitted app, or approved release. No public-submission legal attestations have been made. The listing JSON includes confirmed publisher details and verified public website URLs; it is not a final plugin manifest or submission-ready ZIP.
 
 ## Confirm next
 - Publisher selected: Hamed Bahadorzadeh; portal identity verification remains unverified.
@@ -16,7 +16,7 @@ This is preparation material, not an uploaded package, submitted app, or approve
 ## Still needed before packaging/submission
 - Publisher must complete portal identity verification; selected name/country/free declarations are recorded.
 - Public support contact confirmed: h.bahadorzadeh@gmail.com. Support page implemented; short policy pages are implemented at /privacy and /terms for this deployment.
-- Verify the four public listing URLs after deployment: homepage, /support, /privacy, and /terms. All four values are present in listing-draft.json; successful deployment and public content checks are still required.
+- Public listing URLs verified: homepage, /support, /privacy, and /terms. All four values are present in listing-draft.json. Production deployment and unauthenticated public-content checks passed on 26 October 2026.
 - Actual square icon files: listing logo at least 256 × 256 and composer icon at least 48 × 48, PNG up to 5 MiB. Proposed direction: a simple green knight and one light board square, without small text. Dark-mode assets/colors are optional.
 - Real recorded demonstration in ChatGPT of the version being submitted, hosted at a reviewer-accessible URL and verified by playback. The walkthrough is a script, not a recording.
 - In-host test evidence for five positive and three negative review cases. Automated domain/MCP/HTTP checks do not establish model tool choice or host rendering behavior.

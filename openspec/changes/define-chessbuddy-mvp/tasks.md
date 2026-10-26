@@ -80,4 +80,4 @@
 ## 12. Public policy pages
 - [x] 12.1 Replace the long policy drafts with short factual notices using confirmed publisher/contact and audience choices.
 - [x] 12.2 Add /privacy and /terms, shared website navigation, effective date, and the four listing URLs.
-- [ ] 12.3 Verify production build, deployment, and public policy content without claiming directory submission.
+- [x] 12.3 Verify production build, deployment, and public policy content without claiming directory submission.
