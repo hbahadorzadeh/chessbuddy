@@ -81,3 +81,11 @@
 - [x] 12.1 Replace the long policy drafts with short factual notices using confirmed publisher/contact and audience choices.
 - [x] 12.2 Add /privacy and /terms, shared website navigation, effective date, and the four listing URLs.
 - [x] 12.3 Verify production build, deployment, and public policy content without claiming directory submission.
+
+## 13. Cache-miss recovery under Vercel memory
+- [x] 13.1 Accept validated same-game snapshots on game tools and reconstruct cold caches without silently resetting identity/history.
+- [x] 13.2 Return recoverable missing-history results rather than host-aborting GAME_UNAVAILABLE tool failures.
+- [x] 13.3 Make identical committed moves/revisions idempotent, including timing metadata.
+- [x] 13.4 Send snapshots from the board/context and add explicit announced-move reconciliation for unseen replies.
+- [x] 13.5 Test cold instances, missing history, malformed/cross-game/expired snapshots, history conflicts and duplicate clock protection.
+- [ ] 13.6 Verify deployment and in-host behavior. Do not claim a global single-instance guarantee or shared state on this Vercel setup.

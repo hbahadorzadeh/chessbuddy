@@ -44,3 +44,26 @@ Anonymous game records and browser snapshots SHALL expire seven days after the l
 #### Scenario: Activity and reads
 - **WHEN** a move commits and subsequent position/guidance reads occur
 - **THEN** the move establishes the new expiry and reads preserve that deadline
+
+### Requirement: Recoverable cache misses with supplied snapshots
+The prototype SHALL accept a complete same-game snapshot on game reads, guidance, moves, resume, and game-based replay. It SHALL validate history, identity, timing, expiry, and existing-history compatibility before reconstructing state. A missing cache entry without history SHALL produce a recoverable result rather than a host-aborting tool error.
+
+#### Scenario: Requests reach cold instances
+- **WHEN** successive requests reach different empty caches with the latest accepted snapshot
+- **THEN** each reconstructs the same UUID/history and can continue without an external store
+
+#### Scenario: Missing history
+- **WHEN** only a UUID is supplied and the current instance has no record
+- **THEN** the tool returns recovery_required and asks for known history without inventing an initial position or creating a new game
+
+#### Scenario: Conflicting or expired snapshot
+- **WHEN** a snapshot belongs to another UUID, conflicts with existing history, or is expired for a missing game
+- **THEN** it is rejected without overwriting or reviving that record
+
+#### Scenario: Identical move retry
+- **WHEN** the same move/revision is retried after committing
+- **THEN** the original committed position/timing is returned without another move or clock charge
+
+#### Scenario: Unseen reply on another instance
+- **WHEN** ChatGPT announces a reply that polling cannot find in the local instance
+- **THEN** the board preserves its position and offers explicit legal reconciliation, without claiming snapshots provide shared cross-instance memory

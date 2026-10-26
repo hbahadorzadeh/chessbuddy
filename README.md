@@ -94,3 +94,10 @@ Autoplay runs locally to avoid adding server latency to every step. It publishes
 
 ## Publisher and policies
 ChessBuddy is free and operated by Hamed Bahadorzadeh. Public pages are `/support`, `/privacy`, and `/terms`, linked from the website footer. The short notices describe the actual temporary game data, provider processing, app-memory limits, and eligibility requirements. Directory submission is a separate step.
+
+## Cache-miss recovery (v0.5)
+Game reads, guidance, moves, resume, and game-based replay can carry a complete `snapshot` (same UUID, full legal move history, known timing and expiry). The board sends it automatically and publishes it to ChatGPT context. A cold Vercel instance can reconstruct the same game without an external store. Snapshots cannot silently overwrite newer or conflicting history; expired snapshots remain expired. Repeating an identical move/revision returns its already committed state without charging the clocks twice.
+
+If no history is available, the tool returns `recovery_required` instead of making the host abort with GAME_UNAVAILABLE. Refresh app tools and use a v0.5 board to send snapshots automatically. An ID alone cannot recover missing data.
+
+This does **not** create shared memory between instances. A reply written elsewhere may still be invisible to the original view. If ChatGPT has announced a legal move that is not visible, the board offers **Apply announced move** to validate and reconcile it; identical already-committed moves are not played twice. Truly reliable shared delivery still requires shared storage or a persistent process. No unsupported single-instance Vercel setting has been added.

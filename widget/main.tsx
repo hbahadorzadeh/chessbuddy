@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {App} from '@modelcontextprotocol/ext-apps';
+import {gameSnapshot} from '../lib/game-snapshot';
 import {gameStats,formatDuration,GAME_RETENTION_MS} from '../lib/game-stats';
 import {describePosition, type Position} from '../lib/chess';
 import './style.css';
@@ -50,6 +51,7 @@ function Board() {
   const [promotion,setPromotion]=useState('q');
   const [busy,setBusy]=useState(false);
   const [clockNow,setClockNow]=useState(0);
+  const [announcedMove,setAnnouncedMove]=useState('');
   const [error,setError]=useState('');
   const stats=state?gameStats(state.moves,state.timing,state.gameOver,Math.min(clockNow||Date.now(),state.timing?state.timing.updatedAt+GAME_RETENTION_MS:Infinity)):null;
   const expired=!!(stats?.expiresAt && (clockNow||Date.now())>=stats.expiresAt);
@@ -103,7 +105,7 @@ function Board() {
       if(stopped || !current.gameId)return;
       if(session.current.isApplying){timer=setTimeout(()=>void refresh(),1000);return;}
       try{
-        const result=await bridge!.callServerTool({name:'read_practice_board',arguments:{gameId:current.gameId}});
+        const result=await bridge!.callServerTool({name:'read_practice_board',arguments:{gameId:current.gameId,snapshot:gameSnapshot(current)}});
         if(stopped)return;
         if(session.current.isApplying){timer=setTimeout(()=>void refresh(),1000);return;}
         if(result.isError)throw new Error('This instance has no position for this game.');
@@ -125,7 +127,7 @@ function Board() {
   async function checkReply(){
     if(!bridge || !session.current.position.gameId)return;
     try{
-      const result=await bridge.callServerTool({name:'read_practice_board',arguments:{gameId:session.current.position.gameId}});
+      const result=await bridge.callServerTool({name:'read_practice_board',arguments:{gameId:session.current.position.gameId,snapshot:gameSnapshot(session.current.position)}});
       if(result.isError || !isPosition(result.structuredContent))throw new Error('Live board unavailable or expired.');
       const next=result.structuredContent;
       const current=session.current.position;
@@ -148,7 +150,7 @@ function Board() {
   async function validateMove(moves:string[],move:string):Promise<Position> {
     let next:unknown;
     if(bridge){
-      const result=await bridge.callServerTool({name:'play_practice_move',arguments:{moves,move,...(session.current.position.gameId?{gameId:session.current.position.gameId,expectedRevision:session.current.position.revision}:{})}});
+      const result=await bridge.callServerTool({name:'play_practice_move',arguments:{moves,move,...(session.current.position.gameId?{gameId:session.current.position.gameId,expectedRevision:session.current.position.revision,snapshot:gameSnapshot(session.current.position)}:{})}});
       if(result.isError)throw new Error('The server rejected that move. Try a legal move.');
       next=result.structuredContent;
     }else{
@@ -162,7 +164,7 @@ function Board() {
   async function publishPosition(next:Position) {
     remember(next);
     if(!bridge)return;
-    try{await bridge.updateModelContext({structuredContent:{chessbuddy:next},content:[{type:'text',text:`Current open ChessBuddy board: ${next.fen}. Complete SAN history: ${next.moves.join(' ')}. Revision ${next.revision}. ${next.turn} to move. Game UUID: ${next.gameId ?? "not available"}. ${next.gameId?"Use play_practice_move with this gameId and expectedRevision to update this board":"Use chessbuddy_play_on_board to update this board"}, never open_practice_board for an ordinary reply. No engine analysis is available.`}]});}
+    try{await bridge.updateModelContext({structuredContent:{chessbuddy:next,recoverySnapshot:next.gameId?gameSnapshot(next):undefined},content:[{type:'text',text:`Current open ChessBuddy board: ${next.fen}. Complete SAN history: ${next.moves.join(' ')}. Revision ${next.revision}. ${next.turn} to move. Game UUID: ${next.gameId ?? "not available"}. ${next.gameId?"Use play_practice_move with this gameId and expectedRevision to update this board":"Use chessbuddy_play_on_board to update this board"}, never open_practice_board for an ordinary reply. Recovery snapshot: ${next.gameId?JSON.stringify(gameSnapshot(next)):"none"}. Pass it to game tools so cache loss can be recovered. No engine analysis is available.`}]});}
     catch{setError('Move accepted, but position context could not update. The turn request includes the complete position.');}
   }
   async function requestReply(position:Position) {
@@ -171,7 +173,7 @@ function Board() {
     try{
       const modelContext=(document as Document & {modelContext?:ModelContext}).modelContext;
       if(position.gameId){
-        const result=await bridge.sendMessage({role:'user',content:[{type:'text',text:`I played ${position.moves.at(-1) ?? 'no move yet'}. It is your turn as ${position.turn} on the existing ChessBuddy board. First call get_chess_guidance with this gameId and expectedRevision in play mode to consult the opening/tactics knowledge. Then choose a legal move and call play_practice_move with gameId "${position.gameId}", expectedRevision ${position.revision}, and your chosen move. The open board will update automatically. Do not call open_practice_board or draw another board. FEN: ${position.fen}. Legal SAN moves: ${position.legalMoves.map(m=>m.san).join(', ')}. Explain the idea briefly without claiming engine analysis.`}]});
+        const result=await bridge.sendMessage({role:'user',content:[{type:'text',text:`I played ${position.moves.at(-1) ?? 'no move yet'}. It is your turn as ${position.turn} on the existing ChessBuddy board. First call get_chess_guidance with this gameId, expectedRevision and snapshot in play mode to consult the opening/tactics knowledge. Then choose a legal move and call play_practice_move with gameId "${position.gameId}", expectedRevision ${position.revision}, snapshot ${JSON.stringify(gameSnapshot(position))}, and your chosen move. The open board will check for your committed reply. Do not call open_practice_board or draw another board. FEN: ${position.fen}. Legal SAN moves: ${position.legalMoves.map(m=>m.san).join(', ')}. Explain the idea briefly without claiming engine analysis.`}]});
         if(result.isError)throw new Error('ChatGPT could not accept the turn request.');
       }else if(modelContext){
         const result=await bridge.sendMessage({role:'user',content:[{type:'text',text:`I played ${position.moves.at(-1)} on the open ChessBuddy board. It is your turn as ${position.turn}. Choose one legal move and apply it using chessbuddy_play_on_board with expectedRevision ${position.revision}. Do not open or draw another board. FEN: ${position.fen}. Full SAN history: ${JSON.stringify(position.moves)}. Legal moves: ${position.legalMoves.map(m=>m.san).join(', ')}. Explain your idea briefly; do not claim engine analysis.`}]});
@@ -185,6 +187,16 @@ function Board() {
         throw new Error('This view has no game UUID. Reopen the existing game by its UUID, or explicitly start a new game.');
       }
     }catch(e){session.current.awaitingReply=false;setWaiting(false);setError(e instanceof Error?e.message:'Could not request the next move.');}
+  }
+  async function syncAnnouncedMove(){
+    if(!announcedMove.trim() || busy || !session.current.position.gameId)return;
+    const previousPending=session.current.awaitingReply;
+    session.current.awaitingReply=true;setBusy(true);setError('');
+    try{
+      const next=await session.current.apply(announcedMove.trim(),session.current.position.revision,validateMove,true);
+      setState(next);setWaiting(false);setSelected(null);setAnnouncedMove('');await publishPosition(next);
+    }catch(e){session.current.awaitingReply=previousPending;setError(e instanceof Error?e.message:'Could not apply the announced move.');}
+    finally{setBusy(false);}
   }
   async function move(square:string) {
     if(!state || busy || waiting || !ready || state.gameOver || expired)return;
@@ -202,7 +214,7 @@ function Board() {
     }catch(e){setError(e instanceof Error?e.message:'Move failed. Try again.');}
     finally{setBusy(false);}
   }
-  return <main><header><span className="logo">♞</span><div><p className="eyebrow">CHESSBUDDY</p><h1>Think one move ahead.</h1></div><span className="badge">Live board · v0.4</span></header>
+  return <main><header><span className="logo">♞</span><div><p className="eyebrow">CHESSBUDDY</p><h1>Think one move ahead.</h1></div><span className="badge">Live board · v0.5</span></header>
     <p className="intro">Select a piece, then its destination. Ask ChatGPT about the ideas behind the position.</p>
     <div role="status" aria-live="polite" className="status">{!state?'Waiting for your position…':expired?'Seven-day retention ended · start a new game':waiting?'ChatGPT is choosing a move…':busy?'Checking your move…':`${state.turn} to move · ${state.status}`}</div>
     {stats && <div className="clocks" aria-label="Game and player timers">
@@ -221,6 +233,7 @@ function Board() {
     {!local && state && !state.gameOver && !waiting && !busy && <button onClick={()=>void requestReply(session.current.position)}>Ask ChatGPT to move</button>}
     {state?.gameId && !busy && <button onClick={()=>void checkReply()}>Check for reply</button>}
     {state?.gameId && !busy && !waiting && error && <button onClick={()=>void recoverBoard()}>Recover from history</button>}
+    {state?.gameId && !state.gameOver && (waiting||error) && <details className="sync-move"><summary>ChatGPT announced a move that is not visible?</summary><p>The reply may be on another Vercel instance. Enter the announced SAN move to validate it against this board. An already committed identical move will not be applied twice.</p><label>Announced move <input value={announcedMove} onChange={e=>setAnnouncedMove(e.target.value)} placeholder="e.g. c5 or Nf6" maxLength={12}/></label><button disabled={busy||!announcedMove.trim()} onClick={()=>void syncAnnouncedMove()}>Apply announced move</button></details>}
     {waiting && <button onClick={()=>{session.current.awaitingReply=false;setWaiting(false);setError(session.current.position.gameId?'Stopped waiting. A requested reply may still arrive; use Check for reply.':'Turn request cancelled on this board. Late replies will be rejected.');}}>Cancel waiting</button>}
     {error && <p role="alert" className="error">{error}</p>}
     <section><h2>Move tracker</h2>

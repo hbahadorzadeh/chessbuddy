@@ -12,7 +12,7 @@ test('MCP handshake, tool discovery, embedded resource, and legal/illegal moves'
  try {
   const tools=await client.listTools();
   assert.equal(tools.tools.length,10);
-  assert.match(BOARD_URI,/practice-board-v4\.html$/);
+  assert.match(BOARD_URI,/practice-board-v5\.html$/);
   assert.equal((tools.tools[0]._meta?.ui as {resourceUri:string}).resourceUri,BOARD_URI);
   assert.equal(tools.tools.find(t=>t.name==='play_practice_move')?._meta?.ui,undefined);
   const resource=await client.readResource({uri:BOARD_URI});
@@ -54,7 +54,8 @@ test('live board MCP tools share state and replies never have UI rendering metad
   const read=await client.callTool({name:'read_practice_board',arguments:{gameId}});
   assert.deepEqual((read.structuredContent as Record<string,unknown>).moves,['e4']);
   const duplicate=await client.callTool({name:'play_practice_move',arguments:{gameId,expectedRevision:0,move:'e4'}});
-  assert.equal(duplicate.isError,true);
+  assert.equal(duplicate.isError,undefined);
+  assert.equal((duplicate.structuredContent as {revision:number}).revision,1);
   const reopened=await client.callTool({name:'open_practice_board',arguments:{gameId}});
   assert.deepEqual((reopened.structuredContent as Record<string,unknown>).moves,['e4']);
   assert.equal((reopened.structuredContent as Record<string,unknown>).gameId,gameId);
@@ -63,4 +64,24 @@ test('live board MCP tools share state and replies never have UI rendering metad
   const tools=await client.listTools();
   for(const t of tools.tools.filter(t=>!['new_game','open_practice_board','create_replay'].includes(t.name)))assert.equal(t._meta?.ui,undefined);
  }finally{await client.close();await server.close();}
+});
+
+test('cold MCP instances recover from snapshots and missing history returns a recovery result, not a tool failure',async()=>{
+ const {createMemoryBoardStore}=await import('../lib/memory-board-store');
+ const {liveBoards}=await import('../lib/live-board');
+ const {gameSnapshot}=await import('../lib/game-snapshot');
+ const original=await liveBoards(createMemoryBoardStore()).open([]);
+ async function invoke(name:string,args:Record<string,unknown>){
+  const server=createChessServer('<html>board</html>',createMemoryBoardStore());
+  const client=new Client({name:'cold-instance-test',version:'1'});const [a,b]=InMemoryTransport.createLinkedPair();await server.connect(a);await client.connect(b);
+  try{return await client.callTool({name,arguments:args});}finally{await client.close();await server.close();}
+ }
+ const unavailable=await invoke('read_practice_board',{gameId:original.gameId});
+ assert.equal(unavailable.isError,undefined);assert.equal((unavailable.structuredContent as {status:string}).status,'recovery_required');
+ const advice=await invoke('get_chess_guidance',{gameId:original.gameId,expectedRevision:0,snapshot:gameSnapshot(original)});assert.equal(advice.isError,undefined);
+ const moved=await invoke('play_practice_move',{gameId:original.gameId,expectedRevision:0,move:'e4',snapshot:gameSnapshot(original)});
+ const position=moved.structuredContent as unknown as typeof original;assert.equal(position.gameId,original.gameId);assert.deepEqual(position.moves,['e4']);
+ const read=await invoke('read_practice_board',{gameId:original.gameId,snapshot:gameSnapshot(position)});assert.deepEqual((read.structuredContent as {moves:string[]}).moves,['e4']);
+ const replay=await invoke('create_replay',{gameId:original.gameId,snapshot:gameSnapshot(position)});assert.equal((replay.structuredContent as {originGameId:string}).originGameId,original.gameId);
+ const malformed=await invoke('read_practice_board',{gameId:original.gameId,snapshot:{gameId:original.gameId}});assert.equal(malformed.isError,true);
 });

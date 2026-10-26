@@ -3,7 +3,7 @@
 Status: ready-to-rehearse walkthrough, **not a recorded or verified video**. No browser-control or video-recording tool is connected in this task, so record real interactions in your own ChatGPT browser. A video of the standalone `/board` page is not a substitute for the in-ChatGPT walkthrough.
 
 ## Before recording
-1. Refresh the ChessBuddy app's tools and open a clean ChatGPT chat with ChessBuddy selected. Confirm the board shows **Live board · v0.4** and has timers, a move tracker, and a visible game UUID.
+1. Refresh the ChessBuddy app's tools and open a clean ChatGPT chat with ChessBuddy selected. Confirm the board shows **Live board · v0.5** and has timers, a move tracker, and a visible game UUID.
 2. Rehearse the steps below once. If a move fails, a second game appears, or an answer invents engine analysis, stop and report it before recording the final take.
 3. Record the app and readable prompts/results using your screen recorder. Keep tokens, unrelated conversations, notifications, and private material off screen. Narration is optional. Aim for about three minutes, leaving enough time to read the results.
 

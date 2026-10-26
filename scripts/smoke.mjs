@@ -6,7 +6,7 @@ const client=new Client({name:'chessbuddy-smoke',version:'0.1.0'});
 await client.connect(new StreamableHTTPClientTransport(new URL('/mcp',origin)));
 try {
  const tools=await client.listTools();assert.equal(tools.tools.length,10);
- const resource=await client.readResource({uri:'ui://chessbuddy/practice-board-v4.html'});
+ const resource=await client.readResource({uri:'ui://chessbuddy/practice-board-v5.html'});
  assert.match(resource.contents[0].text,/<div id="root">/);
  const opened=await client.callTool({name:'new_game',arguments:{}});assert.equal(opened.structuredContent.revision,0);
  const gameId=opened.structuredContent.gameId;assert.equal(typeof gameId,'string');
