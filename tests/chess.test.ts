@@ -28,3 +28,24 @@ test('bounds untrusted history size and rejects malformed input',()=>{
  assert.throws(()=>playMove({moves:Array(401).fill('e4'),move:'e5'}));
  assert.throws(()=>playMove({moves:[],move:42}));
 });
+
+test('one board accepts exactly one opponent reply and rejects stale or late moves',async()=>{
+ const {BoardSession}=await import('../lib/board-session');
+ const session=new BoardSession();
+ const validate=async(moves:string[],move:string)=>playMove({moves,move});
+ await session.apply('e4',0,validate);
+ session.awaitingReply=true;
+ await assert.rejects(session.apply('e5',1,validate),/Wait for ChatGPT/);
+ await session.apply('e5',1,validate,true);
+ assert.deepEqual(session.position.moves,['e4','e5']);
+ await assert.rejects(session.apply('e5',1,validate,true),/moved on/);
+ await assert.rejects(session.apply('Nf3',2,validate,true),/not waiting/);
+});
+test('failed opponent validation preserves position and allows a legal retry',async()=>{
+ const {BoardSession}=await import('../lib/board-session');
+ const session=new BoardSession(['e4']);session.awaitingReply=true;
+ const validate=async(moves:string[],move:string)=>playMove({moves,move});
+ await assert.rejects(session.apply('e4',1,validate,true));
+ assert.deepEqual(session.position.moves,['e4']);assert.equal(session.awaitingReply,true);
+ await session.apply('e5',1,validate,true);assert.equal(session.position.revision,2);
+});

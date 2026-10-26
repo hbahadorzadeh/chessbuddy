@@ -35,3 +35,11 @@ These in-host checks remain pending until deployment and a ChatGPT connection ar
 Saved games require verified OAuth ownership, durable storage, revision/idempotency protection, and isolated environment configuration before shipping. The Stockfish runtime must be measured on Vercel before engine play or analysis is promised. No OpenAI API key is needed for the host conversation.
 
 Record the last healthy production deployment. Roll back by promoting it in Vercel, then verify the stable MCP URL and board resource. Once a database exists, use backward-compatible migrations; a code rollback does not undo database migrations.
+
+
+## Live boards with app memory
+No Redis, database, or additional environment variables are needed for live-board synchronization. The MCP route shares a module-level memory cache within each warm server process. Capacity is 1,000 boards and expiry is one hour after the last move. Each board has a random 256-bit capability key; keep it inside the board and conversation. No account data is stored.
+
+Vercel can route separate requests to different instances and reset process memory. Consequently this mode is explicitly best-effort: a reply written to one instance may not be visible from another. Revision checks are atomic within one process, not across instances. This does not implement authenticated or durable saved games. The user explicitly chose this deployment trade-off rather than an external store.
+
+After deployment, refresh ChatGPT's app tools and start a new board. Play e4, confirm an automatic turn request appears, and confirm the existing board picks up ChatGPT's reply without another board view. If the position is unavailable, try Check for reply before Recover from history. Recovery uses the displayed history with a fresh key and can lose an unseen reply; it cannot eliminate instance routing problems. Browser in-host acceptance remains a user test; HTTP tests verify one running server.

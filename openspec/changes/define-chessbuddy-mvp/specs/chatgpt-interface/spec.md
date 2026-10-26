@@ -47,3 +47,23 @@ The first integration slice SHALL expose stateless practice tools accepting comp
 #### Scenario: Context synchronization fails
 - **WHEN** a board move succeeds but the host rejects its model-context update
 - **THEN** the board keeps the accepted position and tells the player that ChatGPT context did not update
+
+
+### Requirement: Automatic turn handoff on an existing board
+The prototype SHALL send ChatGPT a turn request after an accepted human move when automatic replies are enabled, and SHALL refresh the same mounted board through headless move/read tools. Only the open-board tool SHALL associate its result with a board resource.
+
+#### Scenario: Human completes a move
+- **WHEN** a human move is accepted with automatic replies enabled
+- **THEN** the widget sends a turn request with the complete history, board key, and expected revision without another typed message
+
+#### Scenario: ChatGPT replies
+- **WHEN** ChatGPT commits a legal move to the same warm server instance
+- **THEN** the widget retrieves the new revision and updates its existing view without another board result
+
+#### Scenario: Missing or conflicting memory
+- **WHEN** Vercel has no matching board or returns older or conflicting history
+- **THEN** the widget preserves its displayed position and offers explicit refresh or recovery without silently rewinding
+
+#### Scenario: Recovery
+- **WHEN** the player chooses Recover from history
+- **THEN** the widget obtains a fresh board key for the exact displayed history without creating another board view and explains that an unseen reply may be lost

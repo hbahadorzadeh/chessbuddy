@@ -51,3 +51,11 @@ Use the deployed HTTPS `/mcp` endpoint in ChatGPT's developer/custom-app connect
 - [Implementation checklist](openspec/changes/define-chessbuddy-mvp/tasks.md)
 
 OpenSpec CLI and Codex workflows are installed. The active change stays open until the full MVP acceptance criteria pass. Next milestones prove Vercel/ChatGPT compatibility and Stockfish execution, then add authenticated saved games, engine play, progressive hints, and review.
+
+
+## Automatic turns and one live board
+Inside ChatGPT, **Ask ChatGPT to reply after my moves** is enabled by default. A player move sends the next-turn request automatically. ChatGPT calls a headless move tool; the existing board polls for the reply and updates in place. Refresh the app's tool definitions and open a new board after this update. Only the explicit open-board tool creates a board view.
+
+No database or additional service is required. Anonymous positions live in a bounded process-memory cache: at most 1,000 boards, expiring one hour after the last move. Vercel instances do not share this cache and can restart at any time, so synchronization is best-effort. A reply can be unavailable if requests reach different instances. This is a prototype, not durable saved games.
+
+The browser preserves its displayed move history when a server position is missing, older, or conflicting. Try **Check for reply** first. **Recover from history** creates a fresh anonymous key from the displayed moves without creating another board; a reply to the old key may be lost. Recovery does not guarantee requests will keep reaching the same Vercel instance. Cancelling waiting stops local polling, not a ChatGPT turn already submitted. ChatGPT chooses moves here; Stockfish-backed strength remains future work.
