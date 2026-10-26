@@ -15,11 +15,68 @@
         "websiteURL": "https://chessbuddy-self.vercel.app",
         "supportURL": "https://chessbuddy-self.vercel.app/support",
         "privacyPolicyURL": "https://chessbuddy-self.vercel.app/privacy",
-        "termsOfServiceURL": "https://chessbuddy-self.vercel.app/terms"
+        "termsOfServiceURL": "https://chessbuddy-self.vercel.app/terms",
+        "logo": "assets/chessbuddy-icon.png",
+        "composerIcon": "assets/chessbuddy-icon.png"
       },
       "publication": {
         "release_notes": "Initial submission draft: interactive legal chess games with stable UUIDs, elapsed timers, move tracking, authored guidance, and PGN/FEN replay with optional recorded timing.",
         "countries": []
+      },
+      "review": {
+        "prompts": [
+          "Start a chess game and help me understand the ideas behind each move.",
+          "Give me a gentle hint about my current position without revealing a move.",
+          "Replay my supplied PGN from a later position and explain the strategy."
+        ],
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Stable game identity and board updates. Start a new anonymous game; after White e4, have the opponent commit one legal reply. Verify in ChatGPT; API tests alone do not establish the host view.",
+              "prompt": "Start a game. I will play White. After I move e4 on the board, play Black and explain your idea.",
+              "tools_triggered": "new_game; get_chess_guidance; play_practice_move; read_practice_board as needed.",
+              "expected_behavior": "New gameId is a UUID. Every subsequent game tool uses that same ID and the correct revision. The committed reply advances revision by one, matches the displayed board/history, and does not open a replacement game."
+            },
+            {
+              "description": "Elapsed timers and move ledger. Continue the preceding game with known committed moves and observe clocks.",
+              "prompt": "Show how many moves each side has played and how much time each side has used.",
+              "tools_triggered": "read_practice_board",
+              "expected_behavior": "Player move counts match White/Black plies. thinkingMs and elapsedMs are nonnegative or explicitly unknown for missing historical data. Ledger SAN/durations match returned history. No countdown or tournament clock guarantee is invented."
+            },
+            {
+              "description": "Progressive hint with no early spoiler. Use a fresh game after White e4.",
+              "prompt": "Give me a question to help me think about this position, without telling me a move.",
+              "tools_triggered": "get_chess_guidance with matching gameId/revision, mode hint and hintLevel question",
+              "expected_behavior": "Guidance is for the exact FEN/revision; returned lessons provide a guiding question without candidate moves, mate solutions, or example variations. Game revision is unchanged; no engine score is invented."
+            },
+            {
+              "description": "Replay from a supplied mid-game state. Fixture: initial FEN rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 42; continuation c5 Nf3 Nc6; startPly 2.",
+              "prompt": "Replay this continuation from the given FEN, starting after the second supplied half-move: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 42. Moves: c5, Nf3, Nc6.",
+              "tools_triggered": "create_replay with supplied initialFen, moves and startPly 2; seek_replay and get_replay_guidance for navigation/review",
+              "expected_behavior": "Replay UUID is separate from game UUID. Frame one is Black move 42, frame two is White move 43, initial cursor is 2, and returned guidance FEN equals that frame. Active game revision/history do not change."
+            },
+            {
+              "description": "PGN replay and elapsed timing fixture: 1. e4 {[%emt 0:00:02]} e5 {[%clk 0:04:58]} 2. Nf3. Exercise controls in host.",
+              "prompt": "Replay this PGN with its recorded move timing, then pause after Nf3 and explain the position: 1. e4 {[%emt 0:00:02]} e5 {[%clk 0:04:58]} 2. Nf3",
+              "tools_triggered": "create_replay; seek_replay; get_replay_guidance",
+              "expected_behavior": "White e4 duration is 2000 ms. Black remaining-clock annotation is not represented as elapsed duration. Missing times use documented fallback playback. Pause selects relative ply 3 and guidance matches its exact FEN. Source is user-supplied, not authenticated historical data."
+            }
+          ],
+          "negative": [
+            {
+              "description": "No rated multiplayer integrations exist. Explain the limitation; do not invoke game/replay tools to fabricate an external match or rating.",
+              "prompt": "Join a rated Lichess tournament for me and update my rating when I win."
+            },
+            {
+              "description": "No engine evaluation service exists. Explain that authored knowledge and one-move checks cannot certify a best move or professional strength; do not fabricate engine scores, a search depth, or engine execution.",
+              "prompt": "Guarantee the Stockfish-best move at depth 40 and tell me its exact centipawn score."
+            },
+            {
+              "description": "No app URL/game-database fetch tool exists. Ask for the actual PGN/move list or use another explicitly available host source; do not claim this server fetched or authenticated a historical game.",
+              "prompt": "Fetch an authenticated famous-game score from a chess website using ChessBuddy alone, without me supplying PGN or moves."
+            }
+          ]
+        }
       }
     }
   }

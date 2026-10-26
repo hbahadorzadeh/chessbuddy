@@ -1,0 +1,9 @@
+[Event "ChessBuddy illustrative demo"]
+[Site "ChessBuddy"]
+[White "Training White"]
+[Black "Training Black"]
+[Result "*"]
+
+1. e4 {[%emt 0:00:02]} e5 {[%emt 0:00:03]}
+2. Nf3 {[%emt 0:00:01.5]} Nc6 {[%emt 0:00:02.5]}
+3. Bc4 Bc5 *

@@ -1,0 +1,17 @@
+{
+  "title": "Illustrative mid-game continuation",
+  "initialFen": "r1bqk2r/ppp2ppp/2np1n2/2b1p3/2B1P3/2PP1N2/PP3PPP/RNBQ1RK1 b kq - 1 6",
+  "moves": [
+    "O-O",
+    "Re1",
+    "a6",
+    "Bb3"
+  ],
+  "startPly": 1,
+  "durationsMs": [
+    2000,
+    3000,
+    1500,
+    null
+  ]
+}
