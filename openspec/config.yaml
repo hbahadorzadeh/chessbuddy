@@ -1,0 +1,14 @@
+schema: spec-driven
+context: |
+  Project: ChessBuddy (target repository hbahadorzadeh/chessbuddy).
+  ChatGPT is the primary user interface, with an embedded interactive chessboard.
+  Next.js App Router and TypeScript host the MCP endpoint and app resources on Vercel.
+  A chess rules library is authoritative for legality; Stockfish supplies analysis.
+  ChatGPT supplies explanations through the host conversation, without a separate chat UI.
+  This repository starts with a specification; implementation follows the active change.
+rules:
+  specs:
+    - Use SHALL requirements with concrete WHEN/THEN scenarios.
+    - Cover ownership, stale positions, retries, and unavailable analysis.
+  tasks:
+    - Distinguish completed specification work from unimplemented product features.

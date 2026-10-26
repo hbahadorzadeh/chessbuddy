@@ -1,0 +1,123 @@
+name: Check and deploy ChessBuddy
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chessbuddy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  specs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Bootstrap only: pin OpenSpec locally with the app scaffold (task 2.2).
+      - name: Validate OpenSpec change
+        env:
+          OPENSPEC_TELEMETRY: '0'
+        run: npx --yes --package @fission-ai/openspec openspec validate define-chessbuddy-mvp --strict
+
+  build:
+    needs: specs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      app-ready: ${{ steps.app.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - id: app
+        name: Detect application scaffold
+        shell: bash
+        run: |
+          if [ -f package.json ]; then
+            test -f package-lock.json || { echo 'Commit package-lock.json before building.' >&2; exit 1; }
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'Specification phase: application build and deployments are skipped.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/setup-node@v4
+        if: steps.app.outputs.ready == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+      - if: steps.app.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.app.outputs.ready == 'true'
+        run: npm run typecheck
+      - if: steps.app.outputs.ready == 'true'
+        run: npm run lint
+      - if: steps.app.outputs.ready == 'true'
+        run: npm test
+      - if: steps.app.outputs.ready == 'true'
+        run: npm run build
+
+  deploy:
+    needs: [specs, build]
+    if: >-
+      needs.build.outputs.app-ready == 'true' &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Configure the same secret names in each GitHub environment; preview uses a separate project.
+    environment:
+      name: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      DEPLOY_TARGET: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Verify deployment configuration
+        shell: bash
+        run: |
+          test -n "$VERCEL_TOKEN" || { echo 'Missing VERCEL_TOKEN environment secret.' >&2; exit 1; }
+          test -n "$VERCEL_ORG_ID" || { echo 'Missing VERCEL_ORG_ID environment secret.' >&2; exit 1; }
+          test -n "$VERCEL_PROJECT_ID" || { echo 'Missing VERCEL_PROJECT_ID environment secret.' >&2; exit 1; }
+      - run: npm ci
+      # Add a pinned Vercel CLI devDependency when scaffolding the app.
+      - name: Pull deployment settings
+        shell: bash
+        run: npx --no-install vercel pull --yes --environment="$DEPLOY_TARGET" --token="$VERCEL_TOKEN"
+      - name: Build Vercel output
+        shell: bash
+        run: |
+          flags=()
+          if [ "$DEPLOY_TARGET" = production ]; then flags+=(--prod); fi
+          npx --no-install vercel build "${flags[@]}" --token="$VERCEL_TOKEN"
+      - id: deploy
+        name: Deploy prebuilt output
+        shell: bash
+        run: |
+          flags=()
+          if [ "$DEPLOY_TARGET" = production ]; then flags+=(--prod); fi
+          url=$(npx --no-install vercel deploy --prebuilt "${flags[@]}" --token="$VERCEL_TOKEN")
+          [[ "$url" == https://* && "$url" != *$'\n'* ]] || { echo 'Expected a single HTTPS deployment URL.' >&2; exit 1; }
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployment: $url" >> "$GITHUB_STEP_SUMMARY"

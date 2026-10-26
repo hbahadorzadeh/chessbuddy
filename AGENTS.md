@@ -1,0 +1,6 @@
+# ChessBuddy
+Read openspec/config.yaml and the active change under openspec/changes/define-chessbuddy-mvp before implementation. Keep requirements, design, and tasks aligned with changes. This starts as a specification repository; do not claim a playable app or deployed service from the presence of workflow files.
+
+Use Next.js App Router, TypeScript, npm with a committed lockfile, and Node 22. ChatGPT is the primary UI. All move sources share authoritative server validation. Persist owned games outside process memory, protect mutations with revisions and idempotency keys, and preserve human moves across engine failures.
+
+Before implementing the widget, read current OpenAI Apps SDK and https://github.com/openai/mcp-extensions/blob/main/AGENTS.md guidance and verify the actual ChatGPT integration. Run official OpenSpec strict validation and relevant application checks. Archive the change after acceptance; do not mark unverified tasks complete.
