@@ -8,3 +8,5 @@ coverage/
 public/chess-widget.html
 
 public/replay-widget.html
+
+public/multiplayer-widget.html

@@ -5,7 +5,9 @@ const origin=new URL(process.argv[2] ?? 'http://127.0.0.1:3000');
 const client=new Client({name:'chessbuddy-smoke',version:'0.1.0'});
 await client.connect(new StreamableHTTPClientTransport(new URL('/mcp',origin)));
 try {
- const tools=await client.listTools();assert.equal(tools.tools.length,10);
+ const tools=await client.listTools();assert.equal(tools.tools.length,18);
+ const sharedResource=await client.readResource({uri:'ui://chessbuddy/multiplayer-v1.html'});assert.match(sharedResource.contents[0].text,/<div id="root">/);
+ const sharedPage=await fetch(new URL('/multiplayer',origin));assert.equal(sharedPage.status,200);
  const resource=await client.readResource({uri:'ui://chessbuddy/practice-board-v5.html'});
  assert.match(resource.contents[0].text,/<div id="root">/);
  const opened=await client.callTool({name:'new_game',arguments:{}});assert.equal(opened.structuredContent.revision,0);
@@ -25,5 +27,22 @@ try {
  const replayPage=await fetch(new URL('/replay',origin));assert.equal(replayPage.status,200);
  const board=await fetch(new URL('/board',origin));assert.equal(board.status,200);assert.match(await board.text(),/ChessBuddy practice board/);
  const local=await fetch(new URL('/api/demo',origin),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({moves:['e4'],move:'e5'})});assert.equal(local.status,200);assert.deepEqual((await local.json()).moves,['e4','e5']);
- console.log('HTTP smoke passed: MCP initialization, tools, board resource, legal/illegal moves, and browser API.');
+ // Cross-route memory is important: Next bundles the API and MCP separately.
+ const createdHttp=await fetch(new URL('/api/multiplayer',origin),{method:'POST',headers:{'Content-Type':'application/json',Origin:origin.origin},body:JSON.stringify({action:'create',color:'White',coachingMode:'hints'})});assert.equal(createdHttp.status,200);
+ const foreign=await fetch(new URL('/api/multiplayer',origin),{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://unrelated.example'},body:JSON.stringify({action:'create'})});assert.equal(foreign.status,403);
+ const host=await createdHttp.json();assert.ok(!host.invitationLink.includes(host.playerCode));
+ const join=await client.callTool({name:'join_multiplayer_game',arguments:{gameId:host.gameId,coachingMode:'explanations'}});assert.ok(!join.isError,JSON.stringify(join));
+ const guest=join.structuredContent;
+ const white={gameId:host.gameId,code:host.playerCode},black={gameId:host.gameId,code:guest.playerCode};
+ const firstShared=await client.callTool({name:'play_multiplayer_move',arguments:{...white,expectedRevision:0,requestId:crypto.randomUUID(),move:'e4'}});assert.ok(!firstShared.isError,JSON.stringify(firstShared));
+ const readShared=await fetch(new URL('/api/multiplayer',origin),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'read',...black})});assert.equal(readShared.status,200);assert.deepEqual((await readShared.json()).position.moves,['e4']);
+ const share=await client.callTool({name:'manage_multiplayer_sharing',arguments:{...white,kind:'spectator',enabled:true}});assert.ok(!share.isError);
+ const spectator={gameId:host.gameId,code:share.structuredContent.spectatorCode};
+ const watch=await client.callTool({name:'open_multiplayer_game',arguments:spectator});assert.equal(watch.structuredContent.role,'spectator');
+ const replyShared=await fetch(new URL('/api/multiplayer',origin),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'play',...black,expectedRevision:1,requestId:crypto.randomUUID(),move:'c5'})});assert.equal(replyShared.status,200);assert.deepEqual((await replyShared.json()).position.moves,['e4','c5']);
+ const viewShared=await client.callTool({name:'read_multiplayer_game',arguments:spectator});assert.deepEqual(viewShared.structuredContent.position.moves,['e4','c5']);
+ await client.callTool({name:'manage_multiplayer_sharing',arguments:{...white,kind:'spectator',enabled:false}});
+ const denied=await client.callTool({name:'read_multiplayer_game',arguments:spectator});assert.equal(denied.isError,true);
+ const leaking=JSON.stringify(viewShared.structuredContent);assert.ok(!leaking.includes(host.playerCode));assert.ok(!leaking.includes(guest.playerCode));
+ console.log('HTTP smoke passed: MCP initialization, tools, board resource, legal/illegal moves, browser API, and cross-route multiplayer invites/moves/spectators/revocation.');
 }finally{await client.close();}

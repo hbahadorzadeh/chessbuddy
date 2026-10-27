@@ -13,7 +13,8 @@ export async function POST(request: Request) {
   try {body=JSON.parse(text);} catch {return new Response('Invalid JSON',{status:400,headers:cors});}
   const html = await readFile(join(process.cwd(),'public/chess-widget.html'),'utf8');
   const replayHtml=await readFile(join(process.cwd(),'public/replay-widget.html'),'utf8');
-  const server = createChessServer(html,undefined,replayHtml);
+  const multiplayerHtml=await readFile(join(process.cwd(),'public/multiplayer-widget.html'),'utf8');
+  const server = createChessServer(html,undefined,replayHtml,multiplayerHtml);
   const transport = new WebStandardStreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});
   try {
     await server.connect(transport);

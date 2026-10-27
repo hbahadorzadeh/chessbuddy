@@ -11,7 +11,7 @@ test('MCP handshake, tool discovery, embedded resource, and legal/illegal moves'
  await server.connect(a);await client.connect(b);
  try {
   const tools=await client.listTools();
-  assert.equal(tools.tools.length,10);
+  assert.equal(tools.tools.length,18);
   assert.match(BOARD_URI,/practice-board-v5\.html$/);
   assert.equal((tools.tools[0]._meta?.ui as {resourceUri:string}).resourceUri,BOARD_URI);
   assert.equal(tools.tools.find(t=>t.name==='play_practice_move')?._meta?.ui,undefined);
@@ -62,7 +62,7 @@ test('live board MCP tools share state and replies never have UI rendering metad
   const missingId=await client.callTool({name:'play_practice_move',arguments:{move:'e5',expectedRevision:1}});
   assert.equal(missingId.isError,true);
   const tools=await client.listTools();
-  for(const t of tools.tools.filter(t=>!['new_game','open_practice_board','create_replay'].includes(t.name)))assert.equal(t._meta?.ui,undefined);
+  for(const t of tools.tools.filter(t=>!['new_game','open_practice_board','create_replay','create_multiplayer_game','join_multiplayer_game','open_multiplayer_game'].includes(t.name)))assert.equal(t._meta?.ui,undefined);
  }finally{await client.close();await server.close();}
 });
 

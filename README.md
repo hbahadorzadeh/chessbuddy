@@ -101,3 +101,17 @@ Game reads, guidance, moves, resume, and game-based replay can carry a complete 
 If no history is available, the tool returns `recovery_required` instead of making the host abort with GAME_UNAVAILABLE. Refresh app tools and use a v0.5 board to send snapshots automatically. An ID alone cannot recover missing data.
 
 This does **not** create shared memory between instances. A reply written elsewhere may still be invisible to the original view. If ChatGPT has announced a legal move that is not visible, the board offers **Apply announced move** to validate and reconcile it; identical already-committed moves are not played twice. Truly reliable shared delivery still requires shared storage or a persistent process. No unsupported single-instance Vercel setting has been added.
+
+## Two-human games and spectators (v0.6)
+
+Open `/multiplayer` or ask ChatGPT to create a multiplayer game. Pick a color and your coaching mode. Share the invitation link/UUID; the first person to accept joins the other seat. Joining is explicit, not automatic on visiting a link. Each player gets an independent private random code; retain it to reopen the same UUID in the browser or your own ChatGPT. Codes never belong in public URLs. No accounts, email, database or external service are required.
+
+ChatGPT is a private coach, never the second human opponent. Explanations discusses positions and played moves; hints adds questions/concepts; suggestions allows move candidates. This is authored educational guidance, not engine evaluation or a guarantee about every model response.
+
+The creator can revoke an unclaimed invitation or create/replace/revoke a separate read-only spectator link. Spectators see live positions/explanations. After a game finishes, anyone with valid player/spectator access can review each ply without moving a shared cursor or changing the game. UUID alone is not sufficient to view a multiplayer game. A spectator link has a read-only code in its fragment; player codes are never in links.
+
+**Best-effort Vercel memory, explicitly selected by the publisher:** API and MCP routes use a process-global bounded Map, atomic revisions/seat claims, idempotent move UUIDs, and polling. Different Vercel processes still cannot share it. A restart/deployment/other instance can make a game disappear. There is no multiplayer snapshot resurrection, which would risk restoring revoked codes or conflicting seats. One continuously running process can synchronize users until restart, but no single-instance guarantee is claimed on Vercel. No scaling configuration has been changed.
+
+A multiplayer game expires seven days after **creation**, shown on the board; moves, reads and sharing do not extend it. Expired records are removed on access and by a minute sweep while the process runs. Capacity is 1,000 active games per process; full capacity rejects new games instead of silently evicting players. Private browser/widget codes are cleaned on expired access; ChatGPT and hosting providers retain their own data under their policies.
+
+Tool names: `create_multiplayer_game`, `join_multiplayer_game`, `open_multiplayer_game`, `read_multiplayer_game`, `play_multiplayer_move`, `set_multiplayer_coaching`, `manage_multiplayer_sharing`, `get_multiplayer_guidance`. Only create/join/open render the multiplayer board. Never mix practice recovery tools with multiplayer UUIDs.
