@@ -1,0 +1,58 @@
+name: Prepare ChessBuddy submission
+on:
+  push:
+    branches: ['submission/**']
+    paths:
+      - 'submission/**'
+      - 'docs/submission/**'
+      - 'scripts/build-submission.py'
+      - 'scripts/check-submission-server.mjs'
+      - '.github/workflows/prepare-submission.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Install schema validator
+        run: python -m pip install --disable-pip-version-check jsonschema==4.23.0
+      - name: Build and inspect public upload ZIP
+        run: python scripts/build-submission.py
+      - name: Verify deployed MCP endpoint and annotations
+        run: node scripts/check-submission-server.mjs
+      - name: Record production dependency audit
+        continue-on-error: true
+        run: npm audit --omit=dev --json > dist/dependency-audit.json
+      - name: Summarize audit
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p=pathlib.Path('dist/dependency-audit.json')
+          if p.exists():
+              d=json.loads(p.read_text())
+              print(json.dumps({'vulnerabilities':d.get('metadata',{}).get('vulnerabilities'), 'registryError':d.get('error')},indent=2))
+              for name, item in d.get('vulnerabilities',{}).items():
+                  print(name, item.get('severity'), 'direct=',item.get('isDirect'), 'fix=',item.get('fixAvailable'))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chessbuddy-submission-0.6.0
+          path: |
+            dist/chessbuddy-0.6.0-submission.zip
+            dist/archive-contents.txt
+            dist/validation-report.json
+            dist/live-mcp-report.json
+            dist/dependency-audit.json
+          if-no-files-found: error
+          retention-days: 30

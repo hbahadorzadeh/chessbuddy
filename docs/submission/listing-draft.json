@@ -5,10 +5,10 @@
         "displayName": "ChessBuddy",
         "shortDescription": "Learn chess by playing",
         "category": "Education & Research",
-        "longDescription": "Practice chess with ChatGPT using an interactive board, legal move validation, and a stable game ID. Track elapsed game and player time, move counts, and move-by-move timing. Ask for progressive hints and position-aware explanations from a bundled collection of authored chess lessons and standard opening continuations. Replay supplied PGN, an existing game snapshot, or a continuation from a custom FEN; step, jump, or autoplay with optional recorded move timing and discuss the selected position with ChatGPT.\n\nThis release uses anonymous, best-effort app memory on Vercel. Games may become unavailable before their seven-day expiry if instances restart or records are evicted. It has no engine evaluation or professional-strength guarantee. Imported historical metadata is supplied by the user and not independently verified.",
+        "longDescription": "Learn chess by playing and discussing positions with ChatGPT. Use an interactive board with legal move validation, elapsed player clocks, and a move-by-move tracker. Ask for explanations, progressive hints, or candidate moves from authored lessons and standard opening continuations.\n\nInvite a friend to a two-human game. Each player receives a private access code and chooses explanations only, hints, or move suggestions in their own ChatGPT conversation. Invitations work in the web app or through ChessBuddy in ChatGPT. The creator can revoke an unclaimed invitation and create, replace, or revoke a separate read-only spectator link. Spectators can follow the game and discuss positions; completed shared games can be reviewed move by move.\n\nReplay supplied PGN, a solo game snapshot, or a continuation from a custom FEN. Start at a later position, step or autoplay with optional recorded elapsed timing, and ask about the displayed position.\n\nChessBuddy is free and has no purchases or required account registration. It uses temporary, best-effort Vercel app memory: routing to another instance, restarts, or deployment can make a game unavailable early. Multiplayer expires seven days after creation; solo games target seven days after the last move, and imported replays seven days after import. Private player codes must not be shared. Guidance is educational, without engine evaluation, rated matchmaking, or a professional-strength guarantee. Supplied historical metadata is not independently authenticated.",
         "defaultPrompt": [
-          "Start a chess game and help me understand the ideas behind each move.",
-          "Give me a gentle hint about my current position without revealing a move.",
+          "Start a chess game and explain the ideas behind each move.",
+          "Create a game I can share with a friend, with hints for me.",
           "Replay my supplied PGN from a later position and explain the strategy."
         ],
         "developerName": "Hamed Bahadorzadeh",
@@ -20,60 +20,60 @@
         "composerIcon": "assets/chessbuddy-icon.png"
       },
       "publication": {
-        "release_notes": "Initial submission draft: interactive legal chess games with stable UUIDs, elapsed timers, move tracking, authored guidance, and PGN/FEN replay with optional recorded timing.",
+        "release_notes": "Initial public package for ChessBuddy v0.6: interactive solo practice; two-human invitations and private player codes; independent coaching modes; revocable spectators; elapsed clocks and move tracking; PGN/FEN replay and completed shared-game analysis. Storage remains best-effort Vercel app memory, with early-loss limitations and seven-day expiration.",
         "countries": []
       },
       "review": {
         "prompts": [
-          "Start a chess game and help me understand the ideas behind each move.",
-          "Give me a gentle hint about my current position without revealing a move.",
+          "Start a chess game and explain the ideas behind each move.",
+          "Create a game I can share with a friend, with hints for me.",
           "Replay my supplied PGN from a later position and explain the strategy."
         ],
         "test_cases": {
           "positive": [
             {
-              "description": "Stable game identity and board updates. Start a new anonymous game; after White e4, have the opponent commit one legal reply. Verify in ChatGPT; API tests alone do not establish the host view.",
-              "prompt": "Start a game. I will play White. After I move e4 on the board, play Black and explain your idea.",
+              "description": "Solo game continuity, legal moves, clocks and ledger. Start in a clean ChatGPT conversation. Use the board for the user's White e4, then request the assistant's Black reply. Unknown generated reply must be checked against server-returned legal moves, not predetermined.",
+              "prompt": "Start a game with me as White. After I move e4 on the board, play Black and explain your idea. Show the move tracker and time used by each side.",
               "tools_triggered": "new_game; get_chess_guidance; play_practice_move; read_practice_board as needed.",
-              "expected_behavior": "New gameId is a UUID. Every subsequent game tool uses that same ID and the correct revision. The committed reply advances revision by one, matches the displayed board/history, and does not open a replacement game."
+              "expected_behavior": "new_game creates a UUID once. Every following solo tool keeps it and uses the current revision and complete recovery snapshot when available. Black's move is committed before announced. Board, FEN, history, clocks and ledger agree with the returned state. The reply advances exactly one ply without opening another board. Missing memory is honestly recovered from known compatible history or reported; no invented reply."
             },
             {
-              "description": "Elapsed timers and move ledger. Continue the preceding game with known committed moves and observe clocks.",
-              "prompt": "Show how many moves each side has played and how much time each side has used.",
-              "tools_triggered": "read_practice_board",
-              "expected_behavior": "Player move counts match White/Black plies. thinkingMs and elapsedMs are nonnegative or explicitly unknown for missing historical data. Ledger SAN/durations match returned history. No countdown or tournament clock guarantee is invented."
+              "description": "Progressive nonspoiling solo coaching. Start a new solo game after White e4 with its returned UUID/revision. Compare the position before and after advice.",
+              "prompt": "Give me one guiding question about this position without revealing a move. Then, only when I ask, show a candidate move and explain whether it is book guidance or engine analysis.",
+              "tools_triggered": "get_chess_guidance with current gameId/expectedRevision/snapshot, mode hint and hintLevel question for the first response; move-level guidance only after a separate explicit user request.",
+              "expected_behavior": "First guidance matches exact position/revision and contains a question without candidate moves, mate solutions or example variations. Explicit follow-up may reveal a legal returned candidate, attributed to authored notes or limited tactical checks. No engine score is fabricated and game history/revision do not change."
             },
             {
-              "description": "Progressive hint with no early spoiler. Use a fresh game after White e4.",
-              "prompt": "Give me a question to help me think about this position, without telling me a move.",
-              "tools_triggered": "get_chess_guidance with matching gameId/revision, mode hint and hintLevel question",
-              "expected_behavior": "Guidance is for the exact FEN/revision; returned lessons provide a guiding question without candidate moves, mate solutions, or example variations. Game revision is unchanged; no engine score is invented."
+              "description": "Independent replay from a later position with a custom FEN and elapsed timings. Fixture FEN r1bqk2r/ppp2ppp/2np1n2/2b1p3/2B1P3/2PP1N2/PP3PPP/RNBQ1RK1 b kq - 1 6; continuation O-O Re1 a6 Bb3; durations 2000,3000,1500,null; startPly 1. Keep any live game unchanged.",
+              "prompt": "Replay this illustrative continuation from FEN r1bqk2r/ppp2ppp/2np1n2/2b1p3/2B1P3/2PP1N2/PP3PPP/RNBQ1RK1 b kq - 1 6. Moves: O-O, Re1, a6, Bb3. Start after the first supplied half-move, with elapsed durations 2000, 3000, 1500 milliseconds and unknown. Step through and explain the displayed position.",
+              "tools_triggered": "create_replay with exact initialFen/moves/startPly 1/durationsMs; seek_replay; get_replay_guidance.",
+              "expected_behavior": "A separate replay UUID opens at relative ply 1. First frame is Black move 6, followed by White move 7. First returns the supplied FEN, never the standard starting position. Navigation and recorded-time playback use supplied durations with documented fallback for null. Guidance FEN matches displayed ply, no active game changes, and illustrative metadata is not claimed as verified history."
             },
             {
-              "description": "Replay from a supplied mid-game state. Fixture: initial FEN rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 42; continuation c5 Nf3 Nc6; startPly 2.",
-              "prompt": "Replay this continuation from the given FEN, starting after the second supplied half-move: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 42. Moves: c5, Nf3, Nc6.",
-              "tools_triggered": "create_replay with supplied initialFen, moves and startPly 2; seek_replay and get_replay_guidance for navigation/review",
-              "expected_behavior": "Replay UUID is separate from game UUID. Frame one is Black move 42, frame two is White move 43, initial cursor is 2, and returned guidance FEN equals that frame. Active game revision/history do not change."
+              "description": "Two-human invitation, independent private access and coaching. Use two separate ChatGPT conversations or one ChatGPT conversation plus /multiplayer. Creator chooses White/hints; the second human explicitly accepts the returned invitation UUID with explanations mode. Each human submits only their own moves; never ask ChatGPT to simulate the other player. Retain each private code only in its corresponding test conversation. Best-effort unavailable-game errors are a blocked/retry outcome, not a passing match.",
+              "prompt": "Create a game with me as White and hints as my coaching mode. Give me the invitation to share with a friend. After my friend accepts in their own chat, help me understand my turn and submit my e4 when I ask.",
+              "tools_triggered": "create_multiplayer_game; join_multiplayer_game in the second conversation; read_multiplayer_game; get_multiplayer_guidance; play_multiplayer_move only for the requesting human; set_multiplayer_coaching when explicitly requested.",
+              "expected_behavior": "Creator receives a UUID and private playerCode; invitation URL contains only the UUID. Exactly one recipient claims Black and receives a different code. Both read the same game when served by the same warm process. Player-authorized moves require expectedRevision and a fresh requestId; identical request retries do not duplicate moves/timing. No opponent turn is played by ChatGPT. Own coaching preferences are independent; hints omit explicit moves, explanations omit next-move suggestions. Expiry stays seven days after creation."
             },
             {
-              "description": "PGN replay and elapsed timing fixture: 1. e4 {[%emt 0:00:02]} e5 {[%clk 0:04:58]} 2. Nf3. Exercise controls in host.",
-              "prompt": "Replay this PGN with its recorded move timing, then pause after Nf3 and explain the position: 1. e4 {[%emt 0:00:02]} e5 {[%clk 0:04:58]} 2. Nf3",
-              "tools_triggered": "create_replay; seek_replay; get_replay_guidance",
-              "expected_behavior": "White e4 duration is 2000 ms. Black remaining-clock annotation is not represented as elapsed duration. Missing times use documented fallback playback. Pause selects relative ply 3 and guidance matches its exact FEN. Source is user-supplied, not authenticated historical data."
+              "description": "Spectator isolation, completed-game review and revocation. In a fresh two-human test game, creator makes a spectator link. A third conversation watches using its read-only code, never a player code. The humans can finish a short legal line f3/e5/g4/Qh4# from the initial position. Creator then revokes spectator access. This is a multi-conversation test with separate contexts and dynamically returned credentials, not packaged reviewer secrets.",
+              "prompt": "Watch the ChessBuddy spectator link I provide and explain the position without changing the game. After it finishes, review the position after the second half-move. If the creator revokes my link, tell me access has ended.",
+              "tools_triggered": "manage_multiplayer_sharing in creator context; open_multiplayer_game/read_multiplayer_game with spectator code; get_multiplayer_guidance with live expectedRevision and ply 2 only after completion.",
+              "expected_behavior": "Spectator response is read-only and contains no player codes, player credential hashes or other players' coaching settings. Before finish, explanation is live-only; after finish, selected ply/FEN matches the second move and shared history/version remain unchanged. Only creator can rotate/revoke sharing. After revocation old spectator reads/guidance fail with ACCESS_DENIED, without resurrecting a snapshot, inventing updates or invoking play_multiplayer_move."
             }
           ],
           "negative": [
             {
-              "description": "No rated multiplayer integrations exist. Explain the limitation; do not invoke game/replay tools to fabricate an external match or rating.",
+              "description": "External rated tournament entry and ratings are unsupported. Explain the limitation without invoking ChessBuddy tools to fabricate an external account, match, tournament entry or rating.",
               "prompt": "Join a rated Lichess tournament for me and update my rating when I win."
             },
             {
-              "description": "No engine evaluation service exists. Explain that authored knowledge and one-move checks cannot certify a best move or professional strength; do not fabricate engine scores, a search depth, or engine execution.",
-              "prompt": "Guarantee the Stockfish-best move at depth 40 and tell me its exact centipawn score."
+              "description": "No Stockfish or other engine evaluation service exists. Explain educational authored notes and limited tactical checks; do not fabricate engine execution, depth, centipawn score or guaranteed best move.",
+              "prompt": "Guarantee the Stockfish-best move at depth 40 and give its exact centipawn score."
             },
             {
-              "description": "No app URL/game-database fetch tool exists. Ask for the actual PGN/move list or use another explicitly available host source; do not claim this server fetched or authenticated a historical game.",
-              "prompt": "Fetch an authenticated famous-game score from a chess website using ChessBuddy alone, without me supplying PGN or moves."
+              "description": "ChessBuddy has no external historical-game retrieval/authentication tool. Ask for PGN/moves or explicitly use another available source with clear attribution; never claim ChessBuddy fetched or authenticated the score.",
+              "prompt": "Using ChessBuddy alone, fetch and authenticate a famous game from a chess website without me supplying PGN or moves."
             }
           ]
         },
