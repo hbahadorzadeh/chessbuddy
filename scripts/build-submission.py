@@ -46,7 +46,7 @@ check(len({" ".join(p.split()) for p in prompts}) == len(prompts), "Unique promp
 check(all(isinstance(p,str) and p.strip() and len(p) <= 128 and "\n" not in p and "@" not in p for p in prompts), "Prompt format")
 check(publication["countries"] == [], "All-country targeting")
 check(isinstance(publication["release_notes"], str) and publication["release_notes"].strip(), "Release notes")
-check("free" in ui["longDescription"].lower() and "no purchases" in ui["longDescription"].lower(), "Commerce facts")
+check(not re.search(r"\b(free|pricing|subscription|discount|promotion|purchase|purchases)\b", ui["longDescription"], re.I), "No pricing or promotional language in public description")
 check(len(review["prompts"]) <= 20 and all(0 < len(p) <= 4000 for p in review["prompts"]), "Review prompts")
 cases = review["test_cases"]
 check(len(cases["positive"]) == 5 and len(cases["negative"]) == 3, "Five positive/three negative cases")
