@@ -133,3 +133,24 @@ jobs:
           [[ "$url" == https://* && "$url" != *$'\n'* ]] || { echo 'Expected a single HTTPS deployment URL.' >&2; exit 1; }
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployment: $url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify public OpenAI domain challenge
+        if: env.DEPLOY_TARGET == 'production'
+        run: |
+          node --input-type=module <<'JS'
+          const url = 'https://chessbuddy-self.vercel.app/.well-known/openai-apps-challenge';
+          const expected = 'QvQqBx3eOodeUQ82PpYxI8MBQd6HEtm2YfnTT0VCGZ4';
+          let verified = false;
+          for (let attempt = 0; attempt < 4; attempt++) {
+            try {
+              const response = await fetch(url, {cache: 'no-store', signal: AbortSignal.timeout(10000)});
+              if (response.status === 200 && await response.text() === expected) {
+                console.log('Public domain challenge verified: HTTP 200 and exact token match.');
+                verified = true;
+                break;
+              }
+            } catch {}
+            if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+          if (!verified) throw new Error('The public domain challenge did not return the exact expected token.');
+          JS

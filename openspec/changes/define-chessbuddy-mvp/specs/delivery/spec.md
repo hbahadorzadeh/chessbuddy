@@ -48,3 +48,10 @@ GitHub Actions SHALL deploy passing main commits to production and eligible same
 #### Scenario: Rollback
 - **WHEN** a production release is faulty
 - **THEN** the operator can promote a previously healthy Vercel deployment and verify the stable MCP endpoint; migrations remain backward-compatible
+
+### Requirement: Public domain-verification challenge
+The deployment SHALL serve the publisher-provided OpenAI verification token as an unauthenticated plain-text response at the origin-root /.well-known/openai-apps-challenge path. Production deployment SHALL verify the public response against the configured token; hosting the token does not itself assert portal verification.
+
+#### Scenario: Reviewer checks domain ownership
+- **WHEN** OpenAI requests the HTTPS challenge URL
+- **THEN** the app returns HTTP 200 and the exact token without HTML or account authentication
