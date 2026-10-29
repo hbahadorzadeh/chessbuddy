@@ -26,13 +26,15 @@ jobs:
       - run: npm ci
       - name: Install schema validator
         run: python -m pip install --disable-pip-version-check jsonschema==4.23.0
+      - name: Record production dependency audit
+        continue-on-error: true
+        run: |
+          mkdir -p dist
+          npm audit --omit=dev --json > dist/dependency-audit.json
       - name: Build and inspect public upload ZIP
         run: python scripts/build-submission.py
       - name: Verify deployed MCP endpoint and annotations
         run: node scripts/check-submission-server.mjs
-      - name: Record production dependency audit
-        continue-on-error: true
-        run: npm audit --omit=dev --json > dist/dependency-audit.json
       - name: Summarize audit
         if: always()
         run: |
@@ -46,6 +48,7 @@ jobs:
                   print(name, item.get('severity'), 'direct=',item.get('isDirect'), 'fix=',item.get('fixAvailable'))
           PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: chessbuddy-submission-0.6.0
           path: |

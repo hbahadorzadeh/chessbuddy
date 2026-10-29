@@ -81,7 +81,15 @@ for name in ("plugin.json", "mcp.json"):
     else:
         validator = jsonschema.validators.validator_for(schema)
         validator.check_schema(schema)
-        validator(schema).validate(document)
+        errors = list(validator(schema).iter_errors(document))
+        if errors:
+            for error in errors:
+                print("Schema error:", error.message)
+                for detail in error.context:
+                    print("  Detail:", list(detail.path), detail.message)
+            if name == "mcp.json":
+                print("Remote server schema:", json.dumps(schema.get("$defs",{}).get("streamableHttpServer",{})))
+            raise errors[0]
         report["checks"]["portableSchema:" + name] = {"status":"passed"}
 
 # Anonymous access checks, without the creator's cookies or provider credentials.
