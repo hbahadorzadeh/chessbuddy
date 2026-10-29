@@ -58,7 +58,7 @@ https(review["demo_recording_url"])
 check(list(mcp["mcpServers"]) == ["chessbuddy"], "Single existing server")
 server = mcp["mcpServers"]["chessbuddy"]
 check(server["type"] == "streamable-http" and server["url"] == "https://chessbuddy-self.vercel.app/mcp", "Verified server identity")
-check(server["extensions"]["com.openai"]["auth"]["type"] == "none", "Public server account auth")
+check(not server.get("headers"), "No packaged credentials for the public server")
 for icon in ("logo", "composerIcon"):
     path = pathlib.PurePosixPath(ui[icon])
     check(not path.is_absolute() and ".." not in path.parts, "Contained icon")

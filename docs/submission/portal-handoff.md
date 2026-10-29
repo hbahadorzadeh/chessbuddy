@@ -16,3 +16,5 @@ The video was reviewed and approved by the publisher; assistant playback is unve
 6. The publisher personally completes the live portal's legal/policy declarations. Do not check unverifiable declarations merely because code was prepared. Submit only after required fields/checks pass. Uploading is not submitting, and approval is not publishing; publishing is a separate later action.
 
 The available session tools cannot operate the public submission portal. This file is a handoff, not evidence of upload or review approval.
+
+The portable MCP schema currently rejects optional server extensions. Since this endpoint needs no account authentication, mcp.json uses only the standard type and URL fields, with no credentials or authentication override. Select no authentication in the portal if prompted.

@@ -3,14 +3,7 @@
   "mcpServers": {
     "chessbuddy": {
       "type": "streamable-http",
-      "url": "https://chessbuddy-self.vercel.app/mcp",
-      "extensions": {
-        "com.openai": {
-          "auth": {
-            "type": "none"
-          }
-        }
-      }
+      "url": "https://chessbuddy-self.vercel.app/mcp"
     }
   }
 }

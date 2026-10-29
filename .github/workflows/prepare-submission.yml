@@ -31,6 +31,9 @@ jobs:
         run: |
           mkdir -p dist
           npm audit --omit=dev --json > dist/dependency-audit.json
+      - name: Record development audit separately
+        continue-on-error: true
+        run: npm audit --json > dist/development-audit.json
       - name: Build and inspect public upload ZIP
         run: python scripts/build-submission.py
       - name: Verify deployed MCP endpoint and annotations
@@ -57,5 +60,6 @@ jobs:
             dist/validation-report.json
             dist/live-mcp-report.json
             dist/dependency-audit.json
+            dist/development-audit.json
           if-no-files-found: error
           retention-days: 30
