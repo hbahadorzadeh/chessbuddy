@@ -36,7 +36,7 @@ jobs:
         run: npm audit --json > dist/development-audit.json
       - name: Build and inspect public upload ZIP
         run: python scripts/build-submission.py
-      - name: Verify deployed MCP endpoint and annotations
+      - name: Verify deployed MCP, annotations and fresh-game API behavior
         run: node scripts/check-submission-server.mjs
       - name: Summarize audit
         if: always()

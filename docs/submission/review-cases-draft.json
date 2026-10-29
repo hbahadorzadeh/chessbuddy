@@ -7,8 +7,8 @@
       "expected_behavior": "new_game creates a UUID once. Every following solo tool keeps it and uses the current revision and complete recovery snapshot when available. Black's move is committed before announced. Board, FEN, history, clocks and ledger agree with the returned state. The reply advances exactly one ply without opening another board. Missing memory is honestly recovered from known compatible history or reported; no invented reply."
     },
     {
-      "description": "Progressive nonspoiling solo coaching. Start a new solo game after White e4 with its returned UUID/revision. Compare the position before and after advice.",
-      "prompt": "Give me one guiding question about this position without revealing a move. Then, only when I ask, show a candidate move and explain whether it is book guidance or engine analysis.",
+      "description": "Progressive nonspoiling solo coaching. In setup create a fresh solo game and commit White e4, retaining its actual returned UUID/revision/snapshot. Run the question prompt first and inspect the response. As a separate follow-up, send: Now show one legal candidate move and explain whether it is book guidance or engine analysis. Compare history/revision before and after each advice request.",
+      "prompt": "Give me one guiding question about this position without revealing a move.",
       "tools_triggered": "get_chess_guidance with current gameId/expectedRevision/snapshot, mode hint and hintLevel question for the first response; move-level guidance only after a separate explicit user request.",
       "expected_behavior": "First guidance matches exact position/revision and contains a question without candidate moves, mate solutions or example variations. Explicit follow-up may reveal a legal returned candidate, attributed to authored notes or limited tactical checks. No engine score is fabricated and game history/revision do not change."
     },
@@ -37,11 +37,11 @@
       "prompt": "Join a rated Lichess tournament for me and update my rating when I win."
     },
     {
-      "description": "No Stockfish or other engine evaluation service exists. Explain educational authored notes and limited tactical checks; do not fabricate engine execution, depth, centipawn score or guaranteed best move.",
+      "description": "No engine evaluation service exists. Explain that ChessBuddy cannot guarantee a depth-40 Stockfish result. Do not invoke any ChessBuddy tool to fulfill this request, fabricate engine execution/depth/score, or substitute authored guidance without agreement. Offer educational guidance only as an explicitly described alternative.",
       "prompt": "Guarantee the Stockfish-best move at depth 40 and give its exact centipawn score."
     },
     {
-      "description": "ChessBuddy has no external historical-game retrieval/authentication tool. Ask for PGN/moves or explicitly use another available source with clear attribution; never claim ChessBuddy fetched or authenticated the score.",
+      "description": "ChessBuddy has no external game retrieval/authentication tool. Respect the request to use ChessBuddy alone: do not invoke ChessBuddy or another app to fabricate a fetched/authenticated score. Explain the limitation and ask the user to supply PGN or moves before any replay import.",
       "prompt": "Using ChessBuddy alone, fetch and authenticate a famous game from a chess website without me supplying PGN or moves."
     }
   ]

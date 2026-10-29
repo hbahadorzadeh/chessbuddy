@@ -16,3 +16,6 @@ No portal draft upload, identity/domain verification, scan completion, legal/pol
 
 ## Dependency audit observed on 29 October 2026
 The package runner's npm audit --omit=dev reported zero runtime dependency vulnerabilities and no registry error. npm ci reported 34 findings across the full development/build dependency tree; these are excluded from the runtime audit and are not bundled in the public ZIP. Development-tool maintenance remains separate work; no general security certification or completed portal scan is claimed.
+
+## Additional pre-upload review
+The hint case now separates its initial question from a later explicit move request. Negative cases explicitly prohibit unsupported tool use and unrequested substitution by another app. Live fresh-game API checks cover solo snapshots/clocks/hints, the exact FEN replay fixture, and multiplayer permissions/retries/revocation. Their actual Passed/Failed/Blocked results are recorded in the generated live-mcp-report.json. These API checks do not upgrade any in-host review case to Passed.
