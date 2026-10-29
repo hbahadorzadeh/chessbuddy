@@ -18,9 +18,9 @@ This is preparation material, not an uploaded package, submitted app, or approve
 - Public support contact confirmed: h.bahadorzadeh@gmail.com. Support page implemented; short policy pages are implemented at /privacy and /terms for this deployment.
 - Public listing URLs verified: homepage, /support, /privacy, and /terms. All four values are present in listing-draft.json. Production deployment and unauthenticated public-content checks passed on 26 October 2026.
 - Icon created and checked: assets/chessbuddy-icon.png, opaque RGB PNG, 1254 × 1254, 1,157,615 bytes. Used for both logo and composerIcon; creator selected one icon for both themes. Generated preview shown for feedback.
-- Real recorded demonstration in ChatGPT of the version being submitted, hosted at a reviewer-accessible URL and verified by playback. The concrete walkthrough is in demo-recording-guide.md, with legal PGN and mid-game FEN fixtures. It is a script, not a recording.
+- Demo recording supplied: [Drive video](https://drive.google.com/file/d/1MbiphkcWZTAUS5J6Ozo15yIgomicSADw/view). Anyone-with-link Viewer permission and raw video retrieval were confirmed on 29 October 2026. Playback, readability, feature coverage and exposed-code checks remain blocked by the unavailable execution workspace. See review-evidence.md; this is not verified demo evidence yet.
 - In-host test evidence for five positive and three negative review cases. Automated domain/MCP/HTTP checks do not establish model tool choice or host rendering behavior.
-- Final portable manifest/server configuration and inspected ZIP after missing facts/materials are supplied. No package is currently claimed ready.
+- Update the listing and cases for the v0.6 multiplayer release, then finalize portable manifest/server configuration and inspect the ZIP. No package is currently claimed ready.
 - Dependency-audit findings reported by CI still need applicability/fix triage before a public-ready claim.
 - Developer/domain verification, applicable platform scans, and publisher-completed legal/policy attestations in the intended submission account.
 

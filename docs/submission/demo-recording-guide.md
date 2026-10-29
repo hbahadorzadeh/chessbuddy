@@ -1,6 +1,6 @@
 # Record the ChessBuddy submission demo
 
-Status: ready-to-rehearse walkthrough, **not a recorded or verified video**. No browser-control or video-recording tool is connected in this task, so record real interactions in your own ChatGPT browser. A video of the standalone `/board` page is not a substitute for the in-ChatGPT walkthrough.
+Status: a [recording was supplied](https://drive.google.com/file/d/1MbiphkcWZTAUS5J6Ozo15yIgomicSADw/view) on 29 October 2026. Drive link-sharing permissions and raw video retrieval were checked, but playback/content review is still pending. The walkthrough below remains a coverage checklist; it is not evidence that the video demonstrates every step. See review-evidence.md. A standalone browser video does not replace the required in-ChatGPT walkthrough.
 
 ## Before recording
 1. Refresh the ChessBuddy app's tools and open a clean ChatGPT chat with ChessBuddy selected. Confirm the board shows **Live board · v0.5** and has timers, a move tracker, and a visible game UUID.

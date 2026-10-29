@@ -76,7 +76,8 @@
               "prompt": "Fetch an authenticated famous-game score from a chess website using ChessBuddy alone, without me supplying PGN or moves."
             }
           ]
-        }
+        },
+        "demo_recording_url": "https://drive.google.com/file/d/1MbiphkcWZTAUS5J6Ozo15yIgomicSADw/view"
       }
     }
   }
